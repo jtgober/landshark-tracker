@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { type Request, type Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { initDb } from './database';
@@ -33,7 +33,7 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/activity', activityRoutes);
 
 // Health check
-app.get('/api/health', (req, res) => {
+app.get('/api/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', message: 'Shark-in API is running' });
 });
 

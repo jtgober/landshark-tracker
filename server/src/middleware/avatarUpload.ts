@@ -1,6 +1,7 @@
 import multer from 'multer'
 import path from 'path'
 import fs from 'fs'
+import type { Request } from 'express'
 import type { AuthedRequest } from './auth.middleware'
 
 const uploadRoot = path.join(__dirname, '../../uploads/avatars')
@@ -11,7 +12,11 @@ if (!fs.existsSync(uploadRoot)) {
 
 const storage = multer.diskStorage({
   destination: uploadRoot,
-  filename: (req, file, cb) => {
+  filename: (
+    req: Request,
+    file: Express.Multer.File,
+    cb: (error: Error | null, filename: string) => void,
+  ) => {
     const ext = path.extname(file.originalname) || '.png'
     const authReq = req as unknown as AuthedRequest
     const userId =
