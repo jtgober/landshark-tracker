@@ -6,6 +6,8 @@ export type Member = {
   lastAction: string
   /** Avatar image URL (path like /uploads/avatars/… or full URL). Omitted for non-user members. */
   avatarUrl?: string | null
+  /** When the user last updated their avatar (for cache-busting). */
+  avatarUpdatedAt?: string | null
 }
 
 export type Activity = {

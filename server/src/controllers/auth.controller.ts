@@ -182,7 +182,7 @@ export const getMe = async (req: AuthedRequest, res: Response) => {
 
   try {
     const result = await db.execute(
-      'SELECT email, avatar_url FROM users WHERE id = ?',
+      'SELECT email, avatar_url, avatar_updated_at FROM users WHERE id = ?',
       [req.user.id],
     )
     if (result.rows.length === 0) {
@@ -192,6 +192,7 @@ export const getMe = async (req: AuthedRequest, res: Response) => {
     res.json({
       email: row.email as string,
       avatarUrl: (row.avatar_url as string | null) ?? undefined,
+      avatarUpdatedAt: (row.avatar_updated_at as string | null) ?? undefined,
     })
   } catch {
     res.status(500).json({ message: 'Failed to fetch profile' })
@@ -267,14 +268,15 @@ export const uploadAvatar = async (req: RequestWithFile, res: Response) => {
   }
 
   const relativeUrl = `/uploads/avatars/${file.filename}`
+  const updatedAt = new Date().toISOString()
 
   try {
-    await db.execute({
-      sql: 'UPDATE users SET avatar_url = ? WHERE id = ?',
-      args: [relativeUrl, req.user.id],
-    })
+    await db.execute(
+      'UPDATE users SET avatar_url = ?, avatar_updated_at = ? WHERE id = ?',
+      [relativeUrl, updatedAt, req.user.id],
+    )
 
-    res.json({ avatarUrl: relativeUrl })
+    res.json({ avatarUrl: relativeUrl, avatarUpdatedAt: updatedAt })
   } catch (error) {
     console.error('uploadAvatar error', error)
     res.status(500).json({ message: 'Failed to save avatar' })

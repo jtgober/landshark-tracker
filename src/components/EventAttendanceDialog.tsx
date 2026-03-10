@@ -150,7 +150,7 @@ export function EventAttendanceDialog(props: {
                   member.avatarUrl != null && member.avatarUrl !== ''
                     ? member.avatarUrl.startsWith('http')
                       ? member.avatarUrl
-                      : `${API_BASE}${member.avatarUrl}`
+                      : `${API_BASE}${member.avatarUrl}${member.avatarUpdatedAt ? `?v=${member.avatarUpdatedAt}` : ''}`
                     : isCurrentUser
                       ? currentUserAvatarUrl
                       : undefined

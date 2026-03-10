@@ -76,6 +76,7 @@ function App() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [, setAvatarTick] = useState(0)
+  const [dataVersion, setDataVersion] = useState(0)
 
   const avatarStorageKey = auth?.userId ? `authAvatarUrl_${auth.userId}` : ''
   const versionStorageKey = auth?.userId ? `authAvatarVersion_${auth.userId}` : ''
@@ -135,18 +136,27 @@ function App() {
     // Sync current user's profile (avatar) from server so nav/settings show the right avatar per user
     fetch(`${API_URL}/auth/me`, { headers })
       .then(res => (res.ok ? res.json() : null))
-      .then((profile: { email?: string; avatarUrl?: string } | null) => {
-        if (!profile || !auth?.userId) return
-        if (profile.email) localStorage.setItem('authEmail', profile.email)
-        if (profile.avatarUrl != null) {
-          localStorage.setItem(`authAvatarUrl_${auth.userId}`, profile.avatarUrl)
-          localStorage.setItem(
-            `authAvatarVersion_${auth.userId}`,
-            Date.now().toString(),
-          )
-          setAvatarTick(t => t + 1)
-        }
-      })
+      .then(
+        (
+          profile:
+            | { email?: string; avatarUrl?: string; avatarUpdatedAt?: string }
+            | null,
+        ) => {
+          if (!profile || !auth?.userId) return
+          if (profile.email) localStorage.setItem('authEmail', profile.email)
+          if (profile.avatarUrl != null) {
+            localStorage.setItem(
+              `authAvatarUrl_${auth.userId}`,
+              profile.avatarUrl,
+            )
+            localStorage.setItem(
+              `authAvatarVersion_${auth.userId}`,
+              profile.avatarUpdatedAt ?? Date.now().toString(),
+            )
+            setAvatarTick(t => t + 1)
+          }
+        },
+      )
       .catch(() => {})
 
     Promise.all([
@@ -190,7 +200,7 @@ function App() {
       }
       setMyEventStatuses(statusMap)
     })
-  }, [auth])
+  }, [auth, dataVersion])
 
   const [newEventOpen, setNewEventOpen] = useState(false)
   const [newEventDraft, setNewEventDraft] = useState<Omit<ClubEvent, 'id'>>({
@@ -766,9 +776,10 @@ function App() {
             localStorage.setItem(`authAvatarUrl_${auth.userId}`, next.avatarUrl)
             localStorage.setItem(
               `authAvatarVersion_${auth.userId}`,
-              Date.now().toString(),
+              next.avatarUpdatedAt ?? Date.now().toString(),
             )
             setAvatarTick(t => t + 1)
+            setDataVersion(v => v + 1)
           }
         }}
       />

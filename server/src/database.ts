@@ -74,13 +74,19 @@ export const initDb = async () => {
     );
   `);
 
-  // Lightweight migration: ensure avatar_url column exists on existing databases
+  // Lightweight migration: ensure avatar columns exist on existing databases
   try {
     const usersInfo = await db.execute(
       "SELECT name FROM pragma_table_info('users') WHERE name = 'avatar_url'",
     );
     if (usersInfo.rows.length === 0) {
       await db.execute('ALTER TABLE users ADD COLUMN avatar_url TEXT');
+    }
+    const avatarUpdatedInfo = await db.execute(
+      "SELECT name FROM pragma_table_info('users') WHERE name = 'avatar_updated_at'",
+    );
+    if (avatarUpdatedInfo.rows.length === 0) {
+      await db.execute('ALTER TABLE users ADD COLUMN avatar_updated_at TEXT');
     }
   } catch {
     // If this fails, we just skip; app will fall back to default avatar

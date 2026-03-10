@@ -20,7 +20,11 @@ type Props = {
   open: boolean
   onClose: () => void
   auth: { token: string; email: string; userId: string }
-  onAuthUpdate: (next: { email?: string; avatarUrl?: string }) => void
+  onAuthUpdate: (next: {
+    email?: string
+    avatarUrl?: string
+    avatarUpdatedAt?: string
+  }) => void
   avatarUrl?: string
 }
 
@@ -114,7 +118,10 @@ export function UserSettingsDialog({
       }
 
       if (data.avatarUrl) {
-        onAuthUpdate({ avatarUrl: data.avatarUrl })
+        onAuthUpdate({
+          avatarUrl: data.avatarUrl,
+          avatarUpdatedAt: data.avatarUpdatedAt,
+        })
         setMessage('Avatar updated.')
       }
     } catch {
