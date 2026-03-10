@@ -454,8 +454,12 @@ function App() {
   return (
     <Box
       sx={{
-        minHeight: '100vh',
-        bgcolor: 'background.default',
+        minHeight: { xs: '100dvh', md: '100vh' },
+        // Gradient background should fill the whole viewport on all devices.
+        background:
+          'radial-gradient(circle at top left, #00b4d8, #006d77 60%)',
+        // Slight overlay so cards remain readable.
+        bgcolor: 'rgba(248, 250, 252, 0.9)',
         display: 'flex',
         flexDirection: 'column',
       }}
@@ -469,16 +473,33 @@ function App() {
         }}
       >
         <Toolbar sx={{ minHeight: 68 }}>
-          <Box sx={{ flexGrow: 1 }}>
-            <Typography
-              variant="h6"
-              sx={{ fontWeight: 700, letterSpacing: 0.2 }}
-            >
-              shark.in
-            </Typography>
-            <Typography variant="body2" sx={{ opacity: 0.9 }}>
-              Cycling · Swimming · Running
-            </Typography>
+          <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
+            <Box
+              component="img"
+              src="/landsharks-logo.png"
+              alt="Louisville Landsharks"
+              sx={{
+                width: 40,
+                height: 40,
+                mr: 1.5,
+                borderRadius: '25%',
+                bgcolor: 'transparent',
+                p: 0.5,
+                boxShadow: 'none',
+                objectFit: 'contain',
+              }}
+            />
+            <Box>
+              <Typography
+                variant="h6"
+                sx={{ fontWeight: 700, letterSpacing: 0.2 }}
+              >
+                shark tracker
+              </Typography>
+              <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                Cycling · Swimming · Running
+              </Typography>
+            </Box>
           </Box>
           <IconButton
             color="inherit"

@@ -72,7 +72,10 @@ export function Login({ onAuthSuccess }: LoginProps) {
   return (
     <Box
       sx={{
-        minHeight: '100vh',
+        // Use dynamic viewport on mobile so the gradient always fills the screen,
+        // even with the browser UI visible.
+        minHeight: { xs: '100dvh', md: '100vh' },
+        width: '100%',
         display: 'flex',
         alignItems: 'center',
         background: 'radial-gradient(circle at top left, #00b4d8, #006d77 80%)',
@@ -91,23 +94,34 @@ export function Login({ onAuthSuccess }: LoginProps) {
         >
           <Box
             sx={{
-              width: 64,
-              height: 64,
-              borderRadius: '50%',
-              bgcolor: 'rgba(0, 109, 119, 0.1)',
+              width: 100,
+              height: 100,
+              borderRadius: '25%',
+              bgcolor: 'transparent',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              mb: 2,
+              mb: 2.5,
+              overflow: 'hidden',
+              boxShadow: 'none',
             }}
           >
-            <Typography variant="h4">🦈</Typography>
+            <Box
+              component="img"
+              src="/landsharks-logo.png"
+              alt="Louisville Landsharks"
+              sx={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain',
+              }}
+            />
           </Box>
           <Typography
             variant="h5"
             sx={{ fontWeight: 800, mb: 0.5, color: '#006d77' }}
           >
-            shark.in
+            shark tracker
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
             Club check-in & event safety
