@@ -466,35 +466,76 @@ export const facebookOAuthCallback = async (req: Request, res: Response) => {
   }
 }
 
-export const deleteUser = async (req: Request, res: Response) => {
-  let id = param(req.params.id)
+async function resolveUserId(rawId: string): Promise<string | null> {
+  const direct = await db.execute('SELECT id FROM users WHERE id = ?', [rawId])
+  if (direct.rows.length > 0) return rawId
 
-  if (!id) {
+  // If passed a member ID (user-user-...), strip the leading user- prefix
+  if (rawId.startsWith('user-')) {
+    const stripped = rawId.replace(/^user-/, '')
+    const retry = await db.execute('SELECT id FROM users WHERE id = ?', [stripped])
+    if (retry.rows.length > 0) return stripped
+  }
+
+  return null
+}
+
+export const getUsers = async (_req: Request, res: Response) => {
+  try {
+    const result = await db.execute(
+      'SELECT id, email, avatar_url, avatar_updated_at, phone, created_at FROM users',
+    )
+    res.json(result.rows)
+  } catch (error) {
+    console.error('getUsers error', error)
+    res.status(500).json({ message: 'Failed to fetch users' })
+  }
+}
+
+export const getUserById = async (req: Request, res: Response) => {
+  const rawId = param(req.params.id)
+
+  if (!rawId) {
     return res.status(400).json({ message: 'User ID is required' })
   }
 
   try {
-    // Accept either the member ID (user-user-...) or the raw user ID (user-...)
-    let existing = await db.execute('SELECT id FROM users WHERE id = ?', [id])
-    if (existing.rows.length === 0 && id.startsWith('user-')) {
-      const stripped = id.replace(/^user-/, '')
-      const retry = await db.execute('SELECT id FROM users WHERE id = ?', [stripped])
-      if (retry.rows.length > 0) {
-        id = stripped
-        existing = retry
-      }
-    }
-
-    if (existing.rows.length === 0) {
+    const userId = await resolveUserId(rawId)
+    if (!userId) {
       return res.status(404).json({ message: 'User not found' })
     }
 
-    const memberId = `user-${id}`
+    const result = await db.execute(
+      'SELECT id, email, avatar_url, avatar_updated_at, phone, created_at FROM users WHERE id = ?',
+      [userId],
+    )
+    res.json(result.rows[0])
+  } catch (error) {
+    console.error('getUserById error', error)
+    res.status(500).json({ message: 'Failed to fetch user' })
+  }
+}
 
-    await db.execute('DELETE FROM user_attendance WHERE user_id = ?', [id])
+export const deleteUser = async (req: Request, res: Response) => {
+  const rawId = param(req.params.id)
+
+  if (!rawId) {
+    return res.status(400).json({ message: 'User ID is required' })
+  }
+
+  try {
+    const userId = await resolveUserId(rawId)
+    if (!userId) {
+      return res.status(404).json({ message: 'User not found' })
+    }
+
+    const memberId = `user-${userId}`
+
+    await db.execute('DELETE FROM user_locations WHERE user_id = ?', [userId])
+    await db.execute('DELETE FROM user_attendance WHERE user_id = ?', [userId])
     await db.execute('DELETE FROM attendance WHERE member_id = ?', [memberId])
     await db.execute('DELETE FROM members WHERE id = ?', [memberId])
-    await db.execute('DELETE FROM users WHERE id = ?', [id])
+    await db.execute('DELETE FROM users WHERE id = ?', [userId])
 
     res.status(204).end()
   } catch (error) {

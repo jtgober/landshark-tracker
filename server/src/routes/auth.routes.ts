@@ -5,6 +5,8 @@ import {
   getMe,
   updateMe,
   uploadAvatar,
+  getUsers,
+  getUserById,
   deleteUser,
   socialLoginDev,
   startGoogleOAuth,
@@ -226,16 +228,60 @@ router.post('/social/dev', socialLoginDev)
 
 /**
  * @openapi
+ * /auth/users:
+ *   get:
+ *     tags: [Users]
+ *     summary: List all users
+ *     responses:
+ *       200:
+ *         description: Array of users
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id: { type: string }
+ *                   email: { type: string }
+ *                   avatar_url: { type: string, nullable: true }
+ *                   phone: { type: string, nullable: true }
+ *                   created_at: { type: string }
+ */
+router.get('/users', getUsers)
+
+/**
+ * @openapi
  * /auth/users/{id}:
- *   delete:
- *     tags: [Auth]
- *     summary: Delete a user by ID (and their linked member/attendance)
+ *   get:
+ *     tags: [Users]
+ *     summary: Get a user by ID (accepts user ID or member ID format)
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema: { type: string }
- *         description: The user ID to delete
+ *         description: User ID (user-...) or member ID (user-user-...)
+ *     responses:
+ *       200:
+ *         description: User object
+ *       404:
+ *         description: User not found
+ */
+router.get('/users/:id', getUserById)
+
+/**
+ * @openapi
+ * /auth/users/{id}:
+ *   delete:
+ *     tags: [Users]
+ *     summary: Delete a user by ID (accepts user ID or member ID format)
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *         description: User ID (user-...) or member ID (user-user-...)
  *     responses:
  *       204:
  *         description: User deleted
