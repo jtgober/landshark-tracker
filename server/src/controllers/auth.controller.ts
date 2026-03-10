@@ -2,6 +2,7 @@ import { Request, Response } from 'express'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { db } from '../database'
+import { param } from '../utils/params'
 import type { AuthedRequest } from '../middleware/auth.middleware'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me'
@@ -462,6 +463,43 @@ export const facebookOAuthCallback = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('facebookOAuthCallback error', error)
     res.status(500).send('Facebook OAuth failed')
+  }
+}
+
+export const deleteUser = async (req: Request, res: Response) => {
+  let id = param(req.params.id)
+
+  if (!id) {
+    return res.status(400).json({ message: 'User ID is required' })
+  }
+
+  try {
+    // Accept either the member ID (user-user-...) or the raw user ID (user-...)
+    let existing = await db.execute('SELECT id FROM users WHERE id = ?', [id])
+    if (existing.rows.length === 0 && id.startsWith('user-')) {
+      const stripped = id.replace(/^user-/, '')
+      const retry = await db.execute('SELECT id FROM users WHERE id = ?', [stripped])
+      if (retry.rows.length > 0) {
+        id = stripped
+        existing = retry
+      }
+    }
+
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found' })
+    }
+
+    const memberId = `user-${id}`
+
+    await db.execute('DELETE FROM user_attendance WHERE user_id = ?', [id])
+    await db.execute('DELETE FROM attendance WHERE member_id = ?', [memberId])
+    await db.execute('DELETE FROM members WHERE id = ?', [memberId])
+    await db.execute('DELETE FROM users WHERE id = ?', [id])
+
+    res.status(204).end()
+  } catch (error) {
+    console.error('deleteUser error', error)
+    res.status(500).json({ message: 'Failed to delete user' })
   }
 }
 

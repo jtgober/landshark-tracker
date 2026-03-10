@@ -1,6 +1,8 @@
 import express, { type Request, type Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './swagger';
 import { initDb, databasePath, isPersistent } from './database';
 import path from 'path';
 
@@ -18,6 +20,14 @@ const PORT = process.env.PORT || 3001;
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Swagger docs — available at /api-docs
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customSiteTitle: 'Shark-In API Docs',
+}));
+app.get('/api-docs.json', (_req: Request, res: Response) => {
+  res.json(swaggerSpec);
+});
 app.use(
   '/uploads',
   express.static(path.join(__dirname, '../uploads'), {
