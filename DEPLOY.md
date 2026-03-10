@@ -2,6 +2,11 @@
 
 This guide gets the **frontend** (Vite/React) and **backend** (Node/Express) deployed and wired together.
 
+## If you get a 404 after deploying
+
+- **404 on the app (frontend)** – You might be opening a direct link like `yoursite.vercel.app/events`. The SPA needs the server to serve `index.html` for all routes. The repo’s `vercel.json` already has rewrites for that; redeploy the frontend if you changed it.
+- **404 on the API** – Check the backend URL. The frontend must call the **backend** URL (e.g. `https://shark-in-api.onrender.com`), not the frontend URL. In Vercel, set `VITE_API_URL` to your Render API URL (no trailing slash). Test the API in a browser: open `https://your-api.onrender.com/api/health` – you should see `{"status":"ok",...}`. If that returns 404, the backend isn’t running or the path is wrong.
+
 ## Overview
 
 | Part      | Recommended host | Why                          |
@@ -39,6 +44,8 @@ git push -u origin main
    - For Google OAuth: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` = `https://YOUR_RENDER_URL/api/auth/google/callback`.
    - For Facebook OAuth: `FACEBOOK_APP_ID`, `FACEBOOK_APP_SECRET`, `FACEBOOK_REDIRECT_URI` = `https://YOUR_RENDER_URL/api/auth/facebook/callback`.
 6. Create the service. Note the URL (e.g. `https://shark-in-api.onrender.com`).
+
+**Database:** You don’t need to create the database manually. On first start the server runs `initDb()`, which creates the SQLite file and tables. By default the file is stored under the server’s `data/` directory. On Render the filesystem is **ephemeral** (data is lost on redeploy). To keep data across deploys, add a [Persistent Disk](https://render.com/docs/disks) in the Render dashboard, mount it (e.g. at `/data`), and set env var `DATABASE_PATH=/data/database.sqlite`.
 
 **Optional:** You can use the repo’s `render.yaml` as a blueprint instead of filling the form (Render will read root directory, build, and start from it).
 

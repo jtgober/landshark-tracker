@@ -1,9 +1,20 @@
 import { createClient } from '@libsql/client';
 import path from 'path';
+import fs from 'fs';
 
-// Create a local SQLite file database using libSQL
+// Use DATABASE_PATH if set (e.g. on Render with a persistent disk), otherwise
+// a path under process.cwd() so the DB works when run from dist/ on any host
+const dbDir = process.env.DATABASE_PATH
+  ? path.dirname(process.env.DATABASE_PATH)
+  : path.join(process.cwd(), 'data');
+const dbFile = process.env.DATABASE_PATH ?? path.join(dbDir, 'database.sqlite');
+
+if (!fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir, { recursive: true });
+}
+
 export const db = createClient({
-  url: `file:${path.join(__dirname, '../../database.sqlite')}`,
+  url: `file:${dbFile}`,
 });
 
 export const initDb = async () => {
