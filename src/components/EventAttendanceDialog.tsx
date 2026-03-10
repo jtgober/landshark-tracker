@@ -211,36 +211,10 @@ export function EventAttendanceDialog(props: {
                   <ListItem
                     key={member.id}
                     secondaryAction={
-                      <Stack direction="row" alignItems="center" spacing={0.25}>
-                        {member.phone && (
-                          <>
-                            <Tooltip title={`Call ${member.phone}`}>
-                              <IconButton
-                                size="small"
-                                component="a"
-                                href={`tel:${member.phone}`}
-                                sx={{ color: 'success.main', p: 0.5 }}
-                              >
-                                <Phone sx={{ fontSize: 18 }} />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title={`Text ${member.phone}`}>
-                              <IconButton
-                                size="small"
-                                component="a"
-                                href={`sms:${member.phone}`}
-                                sx={{ color: 'info.main', p: 0.5 }}
-                              >
-                                <Sms sx={{ fontSize: 18 }} />
-                              </IconButton>
-                            </Tooltip>
-                          </>
-                        )}
-                        <ToggleActionButton
-                          isIn={isIn}
-                          onToggle={() => onToggleAttendance(member.id)}
-                        />
-                      </Stack>
+                      <ToggleActionButton
+                        isIn={isIn}
+                        onToggle={() => onToggleAttendance(member.id)}
+                      />
                     }
                   >
                     <ListItemAvatar>
@@ -286,15 +260,30 @@ export function EventAttendanceDialog(props: {
                         </Stack>
                       }
                       secondary={
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{ fontSize: 13 }}
-                        >
-                          {isIn
-                            ? 'Marked out on this course'
-                            : 'Waiting to start or already back'}
-                        </Typography>
+                        member.phone ? (
+                          <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 0.25 }}>
+                            <Tooltip title={`Call ${member.phone}`}>
+                              <IconButton
+                                size="small"
+                                component="a"
+                                href={`tel:${member.phone}`}
+                                sx={{ color: 'success.main', p: 0.25 }}
+                              >
+                                <Phone sx={{ fontSize: 18 }} />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title={`Text ${member.phone}`}>
+                              <IconButton
+                                size="small"
+                                component="a"
+                                href={`sms:${member.phone}`}
+                                sx={{ color: 'info.main', p: 0.25 }}
+                              >
+                                <Sms sx={{ fontSize: 18 }} />
+                              </IconButton>
+                            </Tooltip>
+                          </Stack>
+                        ) : undefined
                       }
                     />
                   </ListItem>
