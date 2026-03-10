@@ -240,60 +240,59 @@ export function EventAttendanceDialog(props: {
                       </Avatar>
                     </ListItemAvatar>
                     <ListItemText
+                      sx={{ pr: 2 }}
                       primary={
-                        <Stack
-                          direction="row"
-                          alignItems="center"
-                          spacing={1}
-                          sx={{ mb: 0.25 }}
+                        <Typography
+                          variant="subtitle1"
+                          sx={{ fontWeight: 600, fontSize: 15 }}
+                          noWrap
                         >
-                          <Typography
-                            variant="subtitle1"
-                            sx={{ fontWeight: 600, fontSize: 15 }}
-                          >
-                            {member.name}
-                          </Typography>
-                          <Chip
-                            label={isIn ? 'On course' : 'Back'}
-                            size="small"
-                            icon={<CheckCircle sx={{ fontSize: 14 }} />}
-                            sx={{
-                              height: 24,
-                              borderRadius: 999,
-                              pl: 0.5,
-                              pr: 1,
-                              backgroundColor: isIn
-                                ? 'rgba(0, 109, 119, 0.08)'
-                                : 'rgba(158, 158, 158, 0.12)',
-                            }}
-                          />
-                        </Stack>
+                          {member.name}
+                        </Typography>
                       }
                       secondary={
-                        member.phone ? (
-                          <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 0.25 }}>
-                            <Tooltip title={`Call ${member.phone}`}>
-                              <IconButton
-                                size="small"
-                                component="a"
-                                href={`tel:${member.phone}`}
-                                sx={{ color: 'success.main', p: 0.25 }}
-                              >
-                                <Phone sx={{ fontSize: 18 }} />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title={`Text ${member.phone}`}>
-                              <IconButton
-                                size="small"
-                                component="a"
-                                href={`sms:${member.phone}`}
-                                sx={{ color: 'info.main', p: 0.25 }}
-                              >
-                                <Sms sx={{ fontSize: 18 }} />
-                              </IconButton>
-                            </Tooltip>
-                          </Stack>
-                        ) : undefined
+                        <Stack spacing={0.5} sx={{ mt: 0.25 }}>
+                          <Box>
+                            <Chip
+                              label={isIn ? 'On course' : 'Back'}
+                              size="small"
+                              icon={<CheckCircle sx={{ fontSize: 14 }} />}
+                              sx={{
+                                height: 24,
+                                borderRadius: 999,
+                                pl: 0.5,
+                                pr: 1,
+                                backgroundColor: isIn
+                                  ? 'rgba(0, 109, 119, 0.08)'
+                                  : 'rgba(158, 158, 158, 0.12)',
+                              }}
+                            />
+                          </Box>
+                          {member.phone && (
+                            <Stack direction="row" alignItems="center" spacing={0.5}>
+                              <Tooltip title={`Call ${member.phone}`}>
+                                <IconButton
+                                  size="small"
+                                  component="a"
+                                  href={`tel:${member.phone}`}
+                                  sx={{ color: 'success.main', p: 0.25 }}
+                                >
+                                  <Phone sx={{ fontSize: 18 }} />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title={`Text ${member.phone}`}>
+                                <IconButton
+                                  size="small"
+                                  component="a"
+                                  href={`sms:${member.phone}`}
+                                  sx={{ color: 'info.main', p: 0.25 }}
+                                >
+                                  <Sms sx={{ fontSize: 18 }} />
+                                </IconButton>
+                              </Tooltip>
+                            </Stack>
+                          )}
+                        </Stack>
                       }
                     />
                   </ListItem>
