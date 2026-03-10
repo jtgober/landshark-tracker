@@ -38,7 +38,7 @@ import { EventsListCard } from './components/EventsListCard'
 import { MainDrawer } from './components/MainDrawer'
 import { CreateEventDialog } from './components/CreateEventDialog'
 import { EventAttendanceDialog } from './components/EventAttendanceDialog'
-import { Login } from './Login'
+import { Login } from './Login.tsx'
 import { UserSettingsDialog } from './components/UserSettingsDialog'
 import { API_URL, API_BASE } from './config'
 
