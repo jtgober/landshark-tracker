@@ -75,15 +75,19 @@ function App() {
   )
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [, setAvatarTick] = useState(0)
+
+  const avatarStorageKey = auth?.userId ? `authAvatarUrl_${auth.userId}` : ''
+  const versionStorageKey = auth?.userId ? `authAvatarVersion_${auth.userId}` : ''
 
   const storedAvatarPath =
-    typeof window !== 'undefined'
-      ? localStorage.getItem('authAvatarUrl') || undefined
+    typeof window !== 'undefined' && avatarStorageKey
+      ? localStorage.getItem(avatarStorageKey) || undefined
       : undefined
 
   const storedAvatarVersion =
-    typeof window !== 'undefined'
-      ? localStorage.getItem('authAvatarVersion') || undefined
+    typeof window !== 'undefined' && versionStorageKey
+      ? localStorage.getItem(versionStorageKey) || undefined
       : undefined
 
   const userAvatarUrl =
@@ -124,11 +128,26 @@ function App() {
   useEffect(() => {
     if (!auth) return
 
-    const headers = auth
-      ? {
-          Authorization: `Bearer ${auth.token}`,
+    const headers = {
+      Authorization: `Bearer ${auth.token}`,
+    }
+
+    // Sync current user's profile (avatar) from server so nav/settings show the right avatar per user
+    fetch(`${API_URL}/auth/me`, { headers })
+      .then(res => (res.ok ? res.json() : null))
+      .then((profile: { email?: string; avatarUrl?: string } | null) => {
+        if (!profile || !auth?.userId) return
+        if (profile.email) localStorage.setItem('authEmail', profile.email)
+        if (profile.avatarUrl != null) {
+          localStorage.setItem(`authAvatarUrl_${auth.userId}`, profile.avatarUrl)
+          localStorage.setItem(
+            `authAvatarVersion_${auth.userId}`,
+            Date.now().toString(),
+          )
+          setAvatarTick(t => t + 1)
         }
-      : undefined
+      })
+      .catch(() => {})
 
     Promise.all([
       fetch(`${API_URL}/members`).then(res => res.json()),
@@ -743,9 +762,13 @@ function App() {
           if (next.email) {
             localStorage.setItem('authEmail', next.email)
           }
-          if (next.avatarUrl) {
-            localStorage.setItem('authAvatarUrl', next.avatarUrl)
-            localStorage.setItem('authAvatarVersion', Date.now().toString())
+          if (next.avatarUrl && auth?.userId) {
+            localStorage.setItem(`authAvatarUrl_${auth.userId}`, next.avatarUrl)
+            localStorage.setItem(
+              `authAvatarVersion_${auth.userId}`,
+              Date.now().toString(),
+            )
+            setAvatarTick(t => t + 1)
           }
         }}
       />

@@ -175,6 +175,29 @@ export const socialLoginDev = async (req: Request, res: Response) => {
   }
 }
 
+export const getMe = async (req: AuthedRequest, res: Response) => {
+  if (!req.user) {
+    return res.status(401).json({ message: 'Unauthorized' })
+  }
+
+  try {
+    const result = await db.execute(
+      'SELECT email, avatar_url FROM users WHERE id = ?',
+      [req.user.id],
+    )
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found' })
+    }
+    const row = result.rows[0]
+    res.json({
+      email: row.email as string,
+      avatarUrl: (row.avatar_url as string | null) ?? undefined,
+    })
+  } catch {
+    res.status(500).json({ message: 'Failed to fetch profile' })
+  }
+}
+
 export const updateMe = async (req: AuthedRequest, res: Response) => {
   if (!req.user) {
     return res.status(401).json({ message: 'Unauthorized' })
