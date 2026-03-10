@@ -11,7 +11,7 @@ import {
   Typography,
   Alert,
 } from '@mui/material'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
 
 import { API_URL } from '../config'
@@ -24,8 +24,10 @@ type Props = {
     email?: string
     avatarUrl?: string
     avatarUpdatedAt?: string
+    phone?: string
   }) => void
   avatarUrl?: string
+  phone?: string
 }
 
 export function UserSettingsDialog({
@@ -34,9 +36,11 @@ export function UserSettingsDialog({
   auth,
   onAuthUpdate,
   avatarUrl,
+  phone: initialPhone,
 }: Props) {
   const [email, setEmail] = useState(auth.email)
   const [password, setPassword] = useState('')
+  const [phone, setPhone] = useState(initialPhone ?? '')
   const [savingProfile, setSavingProfile] = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -48,22 +52,22 @@ export function UserSettingsDialog({
     setError(null)
   }
 
+  useEffect(() => {
+    setPhone(initialPhone ?? '')
+  }, [initialPhone])
+
   const handleSaveProfile = async (event?: FormEvent) => {
     event?.preventDefault()
     resetMessages()
 
-    if (!email && !password) {
-      setError('Enter a new email and/or password to update.')
-      return
-    }
-
     setSavingProfile(true)
     try {
-      const body: { email?: string; password?: string } = {}
+      const body: { email?: string; password?: string; phone?: string } = {}
       if (email && email !== auth.email) body.email = email
       if (password) body.password = password
+      if (phone !== (initialPhone ?? '')) body.phone = phone
 
-      if (!body.email && !body.password) {
+      if (!body.email && !body.password && body.phone === undefined) {
         setError('No changes to save.')
         return
       }
@@ -83,7 +87,7 @@ export function UserSettingsDialog({
         return
       }
 
-      onAuthUpdate({ email: data.email })
+      onAuthUpdate({ email: data.email, phone: data.phone })
       setPassword('')
       setMessage('Profile updated.')
     } catch {
@@ -194,6 +198,19 @@ export function UserSettingsDialog({
           <Box component="form" onSubmit={handleSaveProfile}>
             <Stack spacing={1.5}>
               <Typography variant="subtitle2" sx={{ fontSize: 13, opacity: 0.8 }}>
+                Phone number
+              </Typography>
+              <TextField
+                label="Phone number"
+                type="tel"
+                fullWidth
+                placeholder="+1 (555) 123-4567"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                helperText="Shared with event members so they can reach you for safety."
+              />
+
+              <Typography variant="subtitle2" sx={{ fontSize: 13, opacity: 0.8, mt: 1 }}>
                 Email & password
               </Typography>
               <TextField

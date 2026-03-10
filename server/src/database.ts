@@ -88,6 +88,12 @@ export const initDb = async () => {
     if (avatarUpdatedInfo.rows.length === 0) {
       await db.execute('ALTER TABLE users ADD COLUMN avatar_updated_at TEXT');
     }
+    const phoneInfo = await db.execute(
+      "SELECT name FROM pragma_table_info('users') WHERE name = 'phone'",
+    );
+    if (phoneInfo.rows.length === 0) {
+      await db.execute('ALTER TABLE users ADD COLUMN phone TEXT');
+    }
   } catch {
     // If this fails, we just skip; app will fall back to default avatar
   }

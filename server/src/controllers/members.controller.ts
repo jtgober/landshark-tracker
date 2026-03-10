@@ -6,7 +6,8 @@ export const getMembers = async (req: Request, res: Response) => {
   try {
     const result = await db.execute(`
       SELECT m.id, m.name, m.avatarColor, m.status, m.lastAction,
-             u.avatar_url AS avatarUrl, u.avatar_updated_at AS avatarUpdatedAt
+             u.avatar_url AS avatarUrl, u.avatar_updated_at AS avatarUpdatedAt,
+             u.phone AS phone
       FROM members m
       LEFT JOIN users u ON m.id = 'user-' || u.id
     `);

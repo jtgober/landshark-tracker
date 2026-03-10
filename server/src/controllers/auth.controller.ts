@@ -182,7 +182,7 @@ export const getMe = async (req: AuthedRequest, res: Response) => {
 
   try {
     const result = await db.execute(
-      'SELECT email, avatar_url, avatar_updated_at FROM users WHERE id = ?',
+      'SELECT email, avatar_url, avatar_updated_at, phone FROM users WHERE id = ?',
       [req.user.id],
     )
     if (result.rows.length === 0) {
@@ -193,6 +193,7 @@ export const getMe = async (req: AuthedRequest, res: Response) => {
       email: row.email as string,
       avatarUrl: (row.avatar_url as string | null) ?? undefined,
       avatarUpdatedAt: (row.avatar_updated_at as string | null) ?? undefined,
+      phone: (row.phone as string | null) ?? undefined,
     })
   } catch {
     res.status(500).json({ message: 'Failed to fetch profile' })
@@ -204,15 +205,16 @@ export const updateMe = async (req: AuthedRequest, res: Response) => {
     return res.status(401).json({ message: 'Unauthorized' })
   }
 
-  const { email, password } = req.body as {
+  const { email, password, phone } = req.body as {
     email?: string
     password?: string
+    phone?: string
   }
 
-  if (!email && !password) {
+  if (!email && !password && phone === undefined) {
     return res
       .status(400)
-      .json({ message: 'Provide email and/or password to update' })
+      .json({ message: 'Provide email, password, and/or phone to update' })
   }
 
   try {
@@ -237,6 +239,15 @@ export const updateMe = async (req: AuthedRequest, res: Response) => {
       args.push(passwordHash)
     }
 
+    if (phone !== undefined) {
+      fields.push('phone = ?')
+      args.push(phone)
+    }
+
+    if (fields.length === 0) {
+      return res.status(400).json({ message: 'No changes to save.' })
+    }
+
     args.push(req.user.id)
 
     await db.execute(
@@ -246,6 +257,7 @@ export const updateMe = async (req: AuthedRequest, res: Response) => {
 
     res.json({
       email: email ?? req.user.email,
+      phone: phone,
     })
   } catch (error) {
     console.error('updateMe error', error)

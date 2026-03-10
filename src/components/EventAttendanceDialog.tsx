@@ -17,7 +17,14 @@ import {
   Box,
   Tooltip,
 } from '@mui/material'
-import { CheckCircle, Login, Logout, DeleteOutline } from '@mui/icons-material'
+import {
+  CheckCircle,
+  Login,
+  Logout,
+  DeleteOutline,
+  Phone,
+  Sms,
+} from '@mui/icons-material'
 import type { ClubEvent, Member } from '../types'
 import { API_BASE } from '../config'
 import { EventAttendanceSummary } from './EventAttendanceSummary'
@@ -204,10 +211,36 @@ export function EventAttendanceDialog(props: {
                   <ListItem
                     key={member.id}
                     secondaryAction={
-                      <ToggleActionButton
-                        isIn={isIn}
-                        onToggle={() => onToggleAttendance(member.id)}
-                      />
+                      <Stack direction="row" alignItems="center" spacing={0.25}>
+                        {member.phone && (
+                          <>
+                            <Tooltip title={`Call ${member.phone}`}>
+                              <IconButton
+                                size="small"
+                                component="a"
+                                href={`tel:${member.phone}`}
+                                sx={{ color: 'success.main', p: 0.5 }}
+                              >
+                                <Phone sx={{ fontSize: 18 }} />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title={`Text ${member.phone}`}>
+                              <IconButton
+                                size="small"
+                                component="a"
+                                href={`sms:${member.phone}`}
+                                sx={{ color: 'info.main', p: 0.5 }}
+                              >
+                                <Sms sx={{ fontSize: 18 }} />
+                              </IconButton>
+                            </Tooltip>
+                          </>
+                        )}
+                        <ToggleActionButton
+                          isIn={isIn}
+                          onToggle={() => onToggleAttendance(member.id)}
+                        />
+                      </Stack>
                     }
                   >
                     <ListItemAvatar>

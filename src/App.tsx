@@ -139,11 +139,19 @@ function App() {
       .then(
         (
           profile:
-            | { email?: string; avatarUrl?: string; avatarUpdatedAt?: string }
+            | {
+                email?: string
+                avatarUrl?: string
+                avatarUpdatedAt?: string
+                phone?: string
+              }
             | null,
         ) => {
           if (!profile || !auth?.userId) return
           if (profile.email) localStorage.setItem('authEmail', profile.email)
+          if (profile.phone !== undefined) {
+            localStorage.setItem(`authPhone_${auth.userId}`, profile.phone ?? '')
+          }
           if (profile.avatarUrl != null) {
             localStorage.setItem(
               `authAvatarUrl_${auth.userId}`,
@@ -776,18 +784,25 @@ function App() {
         onClose={() => setSettingsOpen(false)}
         auth={auth}
         avatarUrl={userAvatarUrl}
+        phone={
+          auth?.userId
+            ? localStorage.getItem(`authPhone_${auth.userId}`) ?? ''
+            : ''
+        }
         onAuthUpdate={(next) => {
           setAuth((prev) =>
             prev
               ? {
                   ...prev,
                   email: next.email ?? prev.email,
-                  // avatarUrl is handled via localStorage below
                 }
               : prev,
           )
           if (next.email) {
             localStorage.setItem('authEmail', next.email)
+          }
+          if (next.phone !== undefined && auth?.userId) {
+            localStorage.setItem(`authPhone_${auth.userId}`, next.phone)
           }
           if (next.avatarUrl && auth?.userId) {
             localStorage.setItem(`authAvatarUrl_${auth.userId}`, next.avatarUrl)

@@ -8,6 +8,8 @@ export type Member = {
   avatarUrl?: string | null
   /** When the user last updated their avatar (for cache-busting). */
   avatarUpdatedAt?: string | null
+  /** Phone number (for safety contact). */
+  phone?: string | null
 }
 
 export type Activity = {
