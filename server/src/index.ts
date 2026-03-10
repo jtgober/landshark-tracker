@@ -1,7 +1,7 @@
 import express, { type Request, type Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { initDb } from './database';
+import { initDb, databasePath, isPersistent } from './database';
 import path from 'path';
 
 import eventRoutes from './routes/events.routes';
@@ -32,15 +32,21 @@ app.use('/api/members', memberRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/activity', activityRoutes);
 
-// Health check
+// Health check (includes DB mode so you can verify persistent disk is used)
 app.get('/api/health', (_req: Request, res: Response) => {
-  res.json({ status: 'ok', message: 'Shark-in API is running' });
+  res.json({
+    status: 'ok',
+    message: 'Shark-in API is running',
+    database: isPersistent ? 'persistent' : 'ephemeral',
+    databasePath: isPersistent ? databasePath : undefined,
+  });
 });
 
 // Initialize DB then start server
 initDb().then(() => {
   app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
+    console.log(`Database: ${databasePath} (${isPersistent ? 'persistent' : 'ephemeral — data is lost on redeploy'})`);
   });
 }).catch(err => {
   console.error('Failed to initialize database:', err);

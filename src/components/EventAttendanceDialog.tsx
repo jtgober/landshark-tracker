@@ -17,6 +17,7 @@ import {
 } from '@mui/material'
 import { CheckCircle, Login, Logout, DeleteOutline } from '@mui/icons-material'
 import type { ClubEvent, Member } from '../types'
+import { API_BASE } from '../config'
 import { EventAttendanceSummary } from './EventAttendanceSummary'
 
 export function EventAttendanceDialog(props: {
@@ -145,6 +146,14 @@ export function EventAttendanceDialog(props: {
 
                 const isCurrentUser =
                   currentUserMemberId && member.id === currentUserMemberId
+                const avatarSrc =
+                  member.avatarUrl != null && member.avatarUrl !== ''
+                    ? member.avatarUrl.startsWith('http')
+                      ? member.avatarUrl
+                      : `${API_BASE}${member.avatarUrl}`
+                    : isCurrentUser
+                      ? currentUserAvatarUrl
+                      : undefined
 
                 return (
                   <ListItem
@@ -169,16 +178,14 @@ export function EventAttendanceDialog(props: {
                   >
                     <ListItemAvatar>
                       <Avatar
-                        src={isCurrentUser ? currentUserAvatarUrl : undefined}
+                        src={avatarSrc}
                         sx={{
-                          bgcolor: isCurrentUser
-                            ? 'transparent'
-                            : member.avatarColor,
-                          color: isCurrentUser ? undefined : '#002b36',
+                          bgcolor: avatarSrc ? 'transparent' : member.avatarColor,
+                          color: avatarSrc ? undefined : '#002b36',
                           fontWeight: 700,
                         }}
                       >
-                        {!isCurrentUser && initials}
+                        {!avatarSrc && initials}
                       </Avatar>
                     </ListItemAvatar>
                     <ListItemText

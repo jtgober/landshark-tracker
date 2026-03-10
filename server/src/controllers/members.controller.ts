@@ -4,7 +4,11 @@ import { param } from '../utils/params';
 
 export const getMembers = async (req: Request, res: Response) => {
   try {
-    const result = await db.execute('SELECT * FROM members');
+    const result = await db.execute(`
+      SELECT m.id, m.name, m.avatarColor, m.status, m.lastAction, u.avatar_url AS avatarUrl
+      FROM members m
+      LEFT JOIN users u ON m.id = 'user-' || u.id
+    `);
     res.json(result.rows);
   } catch {
     res.status(500).json({ error: 'Failed to fetch members' });

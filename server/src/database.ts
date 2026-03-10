@@ -17,6 +17,9 @@ export const db = createClient({
   url: `file:${dbFile}`,
 });
 
+export const databasePath = dbFile
+export const isPersistent = Boolean(process.env.DATABASE_PATH)
+
 export const initDb = async () => {
   await db.executeMultiple(`
     CREATE TABLE IF NOT EXISTS members (

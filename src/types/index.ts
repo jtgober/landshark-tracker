@@ -4,6 +4,8 @@ export type Member = {
   avatarColor: string
   status: 'in' | 'out'
   lastAction: string
+  /** Avatar image URL (path like /uploads/avatars/… or full URL). Omitted for non-user members. */
+  avatarUrl?: string | null
 }
 
 export type Activity = {
