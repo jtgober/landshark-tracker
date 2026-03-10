@@ -40,6 +40,7 @@ import { CreateEventDialog } from './components/CreateEventDialog'
 import { EventAttendanceDialog } from './components/EventAttendanceDialog'
 import { Login } from './Login'
 import { UserSettingsDialog } from './components/UserSettingsDialog'
+import { API_URL, API_BASE } from './config'
 
 function App() {
   const theme = useTheme()
@@ -69,8 +70,6 @@ function App() {
     Record<string, 'none' | 'out' | 'in'>
   >({})
 
-  const API_URL = 'http://localhost:3001/api'
-
   const [userMenuAnchor, setUserMenuAnchor] = useState<null | HTMLElement>(
     null,
   )
@@ -89,7 +88,7 @@ function App() {
 
   const userAvatarUrl =
     (storedAvatarPath && auth
-      ? `http://localhost:3001${storedAvatarPath}${
+      ? `${API_BASE}${storedAvatarPath}${
           storedAvatarVersion ? `?v=${storedAvatarVersion}` : ''
         }`
       : undefined) ||
@@ -100,6 +99,27 @@ function App() {
       : '')
 
   const currentUserMemberId = auth ? `user-${auth.userId}` : undefined
+
+  // Handle OAuth callback hash from Google/Facebook
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (window.location.pathname !== '/oauth/callback') return
+    if (!window.location.hash.startsWith('#')) return
+
+    const params = new URLSearchParams(window.location.hash.slice(1))
+    const token = params.get('token')
+    const email = params.get('email')
+    const userId = params.get('userId')
+
+    if (token && email && userId) {
+      localStorage.setItem('authToken', token)
+      localStorage.setItem('authEmail', email)
+      localStorage.setItem('authUserId', userId)
+      setAuth({ token, email, userId })
+    }
+
+    window.history.replaceState(null, '', '/')
+  }, [])
 
   useEffect(() => {
     if (!auth) return

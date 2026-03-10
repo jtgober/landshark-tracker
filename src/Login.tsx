@@ -12,11 +12,11 @@ import {
 import { Google, Facebook, Login as LoginIcon } from '@mui/icons-material'
 import { useState } from 'react'
 
+import { API_URL } from './config'
+
 type LoginProps = {
   onAuthSuccess: (payload: { token: string; email: string; userId: string }) => void
 }
-
-const API_URL = 'http://localhost:3001/api'
 
 export function Login({ onAuthSuccess }: LoginProps) {
   const [mode, setMode] = useState<'login' | 'signup'>('login')
@@ -61,6 +61,12 @@ export function Login({ onAuthSuccess }: LoginProps) {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleSocialLogin = (provider: 'google' | 'facebook') => {
+    setError(null)
+    // Redirect to backend OAuth start endpoint
+    window.location.href = `${API_URL}/auth/${provider}`
   }
 
   return (
@@ -162,7 +168,7 @@ export function Login({ onAuthSuccess }: LoginProps) {
               variant="outlined"
               size="large"
               startIcon={<Google />}
-              disabled
+              onClick={() => handleSocialLogin('google')}
               sx={{
                 py: 1.25,
                 borderRadius: 999,
@@ -174,13 +180,13 @@ export function Login({ onAuthSuccess }: LoginProps) {
                 },
               }}
             >
-              Continue with Google (coming soon)
+              Continue with Google
             </Button>
             <Button
               variant="outlined"
               size="large"
               startIcon={<Facebook />}
-              disabled
+              onClick={() => handleSocialLogin('facebook')}
               sx={{
                 py: 1.25,
                 borderRadius: 999,
@@ -192,7 +198,7 @@ export function Login({ onAuthSuccess }: LoginProps) {
                 },
               }}
             >
-              Continue with Facebook (coming soon)
+              Continue with Facebook
             </Button>
           </Stack>
 

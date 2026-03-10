@@ -1,0 +1,17 @@
+# Render Blueprint: backend API for shark-in
+# https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: shark-in-api
+    runtime: node
+    rootDir: server
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        sync: false
+      # Add GOOGLE_* and FACEBOOK_* in Render dashboard after creating the service

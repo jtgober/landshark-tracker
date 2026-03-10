@@ -14,7 +14,7 @@ import {
 import { useState, useRef } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
 
-const API_URL = 'http://localhost:3001/api'
+import { API_URL } from '../config'
 
 type Props = {
   open: boolean
