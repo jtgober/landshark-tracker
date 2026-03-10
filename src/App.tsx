@@ -209,6 +209,15 @@ function App() {
         })
       }
       setMyEventStatuses(statusMap)
+
+      // Auto-open event from ?event= query param (QR code deep link)
+      const params = new URLSearchParams(window.location.search)
+      const eventParam = params.get('event')
+      if (eventParam) {
+        const match = eventsData.find((e: ClubEvent) => e.id === eventParam)
+        if (match) setActiveEvent(match)
+        window.history.replaceState({}, '', window.location.pathname)
+      }
     })
   }, [auth, dataVersion])
 
