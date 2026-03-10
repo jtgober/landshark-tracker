@@ -193,13 +193,13 @@ export const updateMe = async (req: AuthedRequest, res: Response) => {
 
   try {
     const fields: string[] = []
-    const args: any[] = []
+    const args: (string | number)[] = []
 
     if (email) {
-      const existing = await db.execute({
-        sql: 'SELECT id FROM users WHERE email = ? AND id != ?',
-        args: [email, req.user.id],
-      })
+      const existing = await db.execute(
+        'SELECT id FROM users WHERE email = ? AND id != ?',
+        [email, req.user.id],
+      )
       if (existing.rows.length > 0) {
         return res.status(409).json({ message: 'Email is already in use' })
       }
@@ -215,10 +215,10 @@ export const updateMe = async (req: AuthedRequest, res: Response) => {
 
     args.push(req.user.id)
 
-    await db.execute({
-      sql: `UPDATE users SET ${fields.join(', ')} WHERE id = ?`,
+    await db.execute(
+      `UPDATE users SET ${fields.join(', ')} WHERE id = ?`,
       args,
-    })
+    )
 
     res.json({
       email: email ?? req.user.email,
@@ -229,12 +229,16 @@ export const updateMe = async (req: AuthedRequest, res: Response) => {
   }
 }
 
-export const uploadAvatar = async (req: AuthedRequest, res: Response) => {
+interface RequestWithFile extends AuthedRequest {
+  file?: Express.Multer.File
+}
+
+export const uploadAvatar = async (req: RequestWithFile, res: Response) => {
   if (!req.user) {
     return res.status(401).json({ message: 'Unauthorized' })
   }
 
-  const file = (req as any).file as Express.Multer.File | undefined
+  const file = req.file
   if (!file) {
     return res.status(400).json({ message: 'No file uploaded' })
   }
@@ -300,7 +304,9 @@ export const googleOAuthCallback = async (req: Request, res: Response) => {
       }),
     })
 
-    const tokenData = (await tokenRes.json()) as any
+    const tokenData = (await tokenRes.json()) as {
+      access_token?: string
+    }
     if (!tokenRes.ok) {
       console.error('Google token error', tokenData)
       return res.status(500).send('Failed to exchange Google code')
@@ -315,7 +321,7 @@ export const googleOAuthCallback = async (req: Request, res: Response) => {
       },
     )
 
-    const profile = (await userInfoRes.json()) as any
+    const profile = (await userInfoRes.json()) as { email?: string }
     const email: string | undefined = profile.email
 
     if (!email) {
@@ -382,7 +388,9 @@ export const facebookOAuthCallback = async (req: Request, res: Response) => {
       ).toString()}`,
     )
 
-    const tokenData = (await tokenRes.json()) as any
+    const tokenData = (await tokenRes.json()) as {
+      access_token?: string
+    }
     if (!tokenRes.ok) {
       console.error('Facebook token error', tokenData)
       return res.status(500).send('Failed to exchange Facebook code')
@@ -391,15 +399,15 @@ export const facebookOAuthCallback = async (req: Request, res: Response) => {
     const userInfoRes = await fetch(
       `https://graph.facebook.com/me?${new URLSearchParams({
         fields: 'id,email',
-        access_token: tokenData.access_token as string,
+        access_token: (tokenData.access_token ?? '') as string,
       }).toString()}`,
     )
 
-    const profile = (await userInfoRes.json()) as any
+    const profile = (await userInfoRes.json()) as { email?: string; id?: string }
     let email: string | undefined = profile.email
 
     if (!email) {
-      email = `${profile.id}@facebook.local`
+      email = `${profile.id ?? 'unknown'}@facebook.local`
     }
 
     const userId = await ensureUserForEmail(email)

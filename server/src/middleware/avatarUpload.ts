@@ -1,6 +1,7 @@
 import multer from 'multer'
 import path from 'path'
 import fs from 'fs'
+import type { AuthedRequest } from './auth.middleware'
 
 const uploadRoot = path.join(__dirname, '../../uploads/avatars')
 
@@ -12,9 +13,10 @@ const storage = multer.diskStorage({
   destination: uploadRoot,
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname) || '.png'
-    // user id is on req.user from auth middleware; fall back to timestamp if missing
+    const authReq = req as unknown as AuthedRequest
     const userId =
-      (req as any).user?.id || `anon-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+      authReq.user?.id ??
+      `anon-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
     cb(null, `${userId}${ext}`)
   },
 })

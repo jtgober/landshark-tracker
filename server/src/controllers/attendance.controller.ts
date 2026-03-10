@@ -1,14 +1,15 @@
 import { Request, Response } from 'express';
 import { db } from '../database';
+import { param } from '../utils/params';
 
 export const getAttendanceByEvent = async (req: Request, res: Response) => {
-  const { eventId } = req.params;
-  
+  const eventId = param(req.params.eventId);
+
   try {
-    const result = await db.execute({
-      sql: 'SELECT member_id, status FROM attendance WHERE event_id = ?',
-      args: [eventId]
-    });
+    const result = await db.execute(
+      'SELECT member_id, status FROM attendance WHERE event_id = ?',
+      [eventId],
+    );
 
     const attendanceRecord: Record<string, string> = {};
     result.rows.forEach((row) => {
@@ -16,44 +17,45 @@ export const getAttendanceByEvent = async (req: Request, res: Response) => {
     });
 
     res.json(attendanceRecord);
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: 'Failed to fetch attendance' });
   }
 };
 
 export const toggleAttendance = async (req: Request, res: Response) => {
-  const { eventId, memberId } = req.params;
+  const eventId = param(req.params.eventId);
+  const memberId = param(req.params.memberId);
 
   try {
     // Check if event exists
-    const eventResult = await db.execute({
-      sql: 'SELECT name FROM events WHERE id = ?',
-      args: [eventId]
-    });
-    
+    const eventResult = await db.execute(
+      'SELECT name FROM events WHERE id = ?',
+      [eventId],
+    );
+
     if (eventResult.rows.length === 0) {
       return res.status(404).json({ message: 'Event not found' });
     }
-    
+
     const eventName = eventResult.rows[0].name as string;
 
     // Check if member exists
-    const memberResult = await db.execute({
-      sql: 'SELECT name FROM members WHERE id = ?',
-      args: [memberId]
-    });
-    
+    const memberResult = await db.execute(
+      'SELECT name FROM members WHERE id = ?',
+      [memberId],
+    );
+
     if (memberResult.rows.length === 0) {
       return res.status(404).json({ message: 'Member not found' });
     }
-    
+
     const memberName = memberResult.rows[0].name as string;
 
     // Get current status
-    const statusResult = await db.execute({
-      sql: 'SELECT status FROM attendance WHERE event_id = ? AND member_id = ?',
-      args: [eventId, memberId]
-    });
+    const statusResult = await db.execute(
+      'SELECT status FROM attendance WHERE event_id = ? AND member_id = ?',
+      [eventId, memberId],
+    );
 
     let currentStatus = 'out';
     if (statusResult.rows.length > 0) {
@@ -85,7 +87,7 @@ export const toggleAttendance = async (req: Request, res: Response) => {
     `);
 
     res.json({ success: true, nextStatus });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: 'Failed to toggle attendance' });
   }
 };

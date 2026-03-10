@@ -56,7 +56,7 @@ export function Login({ onAuthSuccess }: LoginProps) {
         email: data.user.email,
         userId: data.user.id,
       })
-    } catch (err) {
+    } catch {
       setError('Network error, please try again')
     } finally {
       setLoading(false)

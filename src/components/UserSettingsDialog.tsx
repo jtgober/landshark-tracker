@@ -82,7 +82,7 @@ export function UserSettingsDialog({
       onAuthUpdate({ email: data.email })
       setPassword('')
       setMessage('Profile updated.')
-    } catch (err) {
+    } catch {
       setError('Network error while updating profile.')
     } finally {
       setSavingProfile(false)
@@ -117,7 +117,7 @@ export function UserSettingsDialog({
         onAuthUpdate({ avatarUrl: data.avatarUrl })
         setMessage('Avatar updated.')
       }
-    } catch (err) {
+    } catch {
       setError('Network error while uploading avatar.')
     } finally {
       setUploadingAvatar(false)

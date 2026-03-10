@@ -160,7 +160,7 @@ function App() {
 
       const statusMap: Record<string, 'none' | 'out' | 'in'> = {}
       if (Array.isArray(myEventsData)) {
-        myEventsData.forEach((evt: any) => {
+        myEventsData.forEach((evt: ClubEvent & { userStatus?: string }) => {
           if (evt.id && evt.userStatus) {
             statusMap[evt.id] =
               evt.userStatus === 'in' || evt.userStatus === 'out'
@@ -404,7 +404,15 @@ function App() {
   if (!auth) {
     return (
       <Login
-        onAuthSuccess={({ token, email, userId }) => {
+        onAuthSuccess={({
+          token,
+          email,
+          userId,
+        }: {
+          token: string
+          email: string
+          userId: string
+        }) => {
           localStorage.setItem('authToken', token)
           localStorage.setItem('authEmail', email)
           localStorage.setItem('authUserId', userId)

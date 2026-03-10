@@ -1,28 +1,27 @@
 import { Request, Response } from 'express';
 import { db } from '../database';
 import type { AuthedRequest } from '../middleware/auth.middleware';
+import { param } from '../utils/params';
 
 export const getEvents = async (req: Request, res: Response) => {
   try {
     const result = await db.execute('SELECT * FROM events ORDER BY id DESC');
     res.json(result.rows);
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: 'Failed to fetch events' });
   }
 };
 
 export const getEventById = async (req: Request, res: Response) => {
+  const id = param(req.params.id);
   try {
-    const result = await db.execute({
-      sql: 'SELECT * FROM events WHERE id = ?',
-      args: [req.params.id]
-    });
+    const result = await db.execute('SELECT * FROM events WHERE id = ?', [id]);
     
     if (result.rows.length === 0) {
       return res.status(404).json({ message: 'Event not found' });
     }
     res.json(result.rows[0]);
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: 'Failed to fetch event' });
   }
 };
@@ -46,16 +45,21 @@ export const createEvent = async (req: Request, res: Response) => {
 
   try {
     // Insert the new event
-    await db.execute({
-      sql: `INSERT INTO events (id, name, date, time, location, type, description) 
+    await db.execute(
+      `INSERT INTO events (id, name, date, time, location, type, description)
             VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      args: [
-        newEvent.id, newEvent.name, newEvent.date, newEvent.time, 
-        newEvent.location, newEvent.type, newEvent.description
-      ]
-    });
+      [
+        newEvent.id,
+        newEvent.name,
+        newEvent.date,
+        newEvent.time,
+        newEvent.location,
+        newEvent.type,
+        newEvent.description,
+      ],
+    );
     res.status(201).json(newEvent);
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: 'Failed to create event' });
   }
 };
@@ -66,8 +70,8 @@ export const getMyEvents = async (req: AuthedRequest, res: Response) => {
   }
 
   try {
-    const result = await db.execute({
-      sql: `
+    const result = await db.execute(
+      `
         SELECT e.*, ua.status as userStatus
         FROM events e
         JOIN user_attendance ua
@@ -75,11 +79,11 @@ export const getMyEvents = async (req: AuthedRequest, res: Response) => {
         WHERE ua.user_id = ?
         ORDER BY e.id DESC
       `,
-      args: [req.user.id],
-    });
+      [req.user.id],
+    );
 
     res.json(result.rows);
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: 'Failed to fetch your events' });
   }
 };
@@ -89,13 +93,13 @@ export const joinEventForUser = async (req: AuthedRequest, res: Response) => {
     return res.status(401).json({ message: 'Unauthorized' });
   }
 
-  const eventId = req.params.id;
+  const eventId = param(req.params.id);
 
   try {
-    const eventResult = await db.execute({
-      sql: 'SELECT id, name FROM events WHERE id = ?',
-      args: [eventId],
-    });
+    const eventResult = await db.execute(
+      'SELECT id, name FROM events WHERE id = ?',
+      [eventId],
+    );
 
     if (eventResult.rows.length === 0) {
       return res.status(404).json({ message: 'Event not found' });
@@ -106,10 +110,10 @@ export const joinEventForUser = async (req: AuthedRequest, res: Response) => {
     const memberId = `user-${req.user.id}`;
 
     // Ensure a matching member exists, creating one if needed
-    const memberResult = await db.execute({
-      sql: 'SELECT id, name, avatarColor, status, lastAction FROM members WHERE id = ?',
-      args: [memberId],
-    });
+    const memberResult = await db.execute(
+      'SELECT id, name, avatarColor, status, lastAction FROM members WHERE id = ?',
+      [memberId],
+    );
 
     let member: {
       id: string
@@ -132,11 +136,11 @@ export const joinEventForUser = async (req: AuthedRequest, res: Response) => {
       const avatarColor = '#8ecae6';
       const lastAction = `${eventName} · Joined just now`;
 
-      await db.execute({
-        sql: `INSERT INTO members (id, name, avatarColor, status, lastAction)
+      await db.execute(
+        `INSERT INTO members (id, name, avatarColor, status, lastAction)
               VALUES (?, ?, ?, ?, ?)`,
-        args: [memberId, prettyName, avatarColor, 'out', lastAction],
-      });
+        [memberId, prettyName, avatarColor, 'out', lastAction],
+      );
 
       member = {
         id: memberId,
@@ -168,7 +172,7 @@ export const joinEventForUser = async (req: AuthedRequest, res: Response) => {
     `);
 
     res.status(201).json({ eventId, status: 'out', member });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: 'Failed to join event' });
   }
 };
@@ -181,13 +185,13 @@ export const toggleSelfAttendance = async (
     return res.status(401).json({ message: 'Unauthorized' });
   }
 
-  const eventId = req.params.id;
+  const eventId = param(req.params.id);
 
   try {
-    const currentResult = await db.execute({
-      sql: 'SELECT status FROM user_attendance WHERE event_id = ? AND user_id = ?',
-      args: [eventId, req.user.id],
-    });
+    const currentResult = await db.execute(
+      'SELECT status FROM user_attendance WHERE event_id = ? AND user_id = ?',
+      [eventId, req.user.id],
+    );
 
     const currentStatus =
       currentResult.rows.length > 0
@@ -203,7 +207,7 @@ export const toggleSelfAttendance = async (
     `);
 
     res.json({ eventId, status: nextStatus });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: 'Failed to update your attendance' });
   }
 };
@@ -213,7 +217,7 @@ export const leaveEventForUser = async (req: AuthedRequest, res: Response) => {
     return res.status(401).json({ message: 'Unauthorized' });
   }
 
-  const eventId = req.params.id;
+  const eventId = param(req.params.id);
   const memberId = `user-${req.user.id}`;
 
   try {
@@ -226,7 +230,7 @@ export const leaveEventForUser = async (req: AuthedRequest, res: Response) => {
     `);
 
     res.json({ eventId });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: 'Failed to leave event' });
   }
 };
@@ -236,13 +240,13 @@ export const deleteEvent = async (req: AuthedRequest, res: Response) => {
     return res.status(401).json({ message: 'Unauthorized' });
   }
 
-  const eventId = req.params.id;
+  const eventId = param(req.params.id);
 
   try {
-    const existing = await db.execute({
-      sql: 'SELECT id FROM events WHERE id = ?',
-      args: [eventId],
-    });
+    const existing = await db.execute(
+      'SELECT id FROM events WHERE id = ?',
+      [eventId],
+    );
 
     if (existing.rows.length === 0) {
       return res.status(404).json({ message: 'Event not found' });
@@ -255,7 +259,7 @@ export const deleteEvent = async (req: AuthedRequest, res: Response) => {
     `);
 
     res.status(204).send();
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: 'Failed to delete event' });
   }
 };
