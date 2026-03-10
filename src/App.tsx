@@ -21,6 +21,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  TextField,
 } from '@mui/material'
 import {
   Add,
@@ -76,6 +77,9 @@ function App() {
   )
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [phonePromptOpen, setPhonePromptOpen] = useState(false)
+  const [phonePromptValue, setPhonePromptValue] = useState('')
+  const [phonePromptSaving, setPhonePromptSaving] = useState(false)
   const [, setAvatarTick] = useState(0)
   const [dataVersion, setDataVersion] = useState(0)
 
@@ -153,6 +157,9 @@ function App() {
           if (profile.email) localStorage.setItem('authEmail', profile.email)
           if (profile.phone !== undefined) {
             localStorage.setItem(`authPhone_${auth.userId}`, profile.phone ?? '')
+          }
+          if (!profile.phone && !sessionStorage.getItem('phonePromptDismissed')) {
+            setPhonePromptOpen(true)
           }
           if (profile.avatarUrl != null) {
             localStorage.setItem(
@@ -797,6 +804,73 @@ function App() {
             }}
           >
             Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={phonePromptOpen}
+        onClose={() => {
+          sessionStorage.setItem('phonePromptDismissed', '1')
+          setPhonePromptOpen(false)
+        }}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Add your phone number</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Share your phone number so other event members can reach you for
+            safety. You can always change this later in Account settings.
+          </Typography>
+          <TextField
+            autoFocus
+            label="Phone number"
+            type="tel"
+            fullWidth
+            placeholder="+1 (555) 123-4567"
+            value={phonePromptValue}
+            onChange={(e) => setPhonePromptValue(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              sessionStorage.setItem('phonePromptDismissed', '1')
+              setPhonePromptOpen(false)
+            }}
+          >
+            Skip
+          </Button>
+          <Button
+            variant="contained"
+            disabled={!phonePromptValue.trim() || phonePromptSaving}
+            onClick={async () => {
+              setPhonePromptSaving(true)
+              try {
+                const res = await fetch(`${API_URL}/auth/me`, {
+                  method: 'PATCH',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${auth.token}`,
+                  },
+                  body: JSON.stringify({ phone: phonePromptValue.trim() }),
+                })
+                if (res.ok && auth.userId) {
+                  localStorage.setItem(
+                    `authPhone_${auth.userId}`,
+                    phonePromptValue.trim(),
+                  )
+                }
+              } catch {
+                // Silently fail — they can add it later in settings
+              }
+              sessionStorage.setItem('phonePromptDismissed', '1')
+              setPhonePromptSaving(false)
+              setPhonePromptOpen(false)
+            }}
+          >
+            Save
           </Button>
         </DialogActions>
       </Dialog>
