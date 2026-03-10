@@ -455,11 +455,7 @@ function App() {
     <Box
       sx={{
         minHeight: { xs: '100dvh', md: '100vh' },
-        // Gradient background should fill the whole viewport on all devices.
-        background:
-          'radial-gradient(circle at top left, #00b4d8, #006d77 60%)',
-        // Slight overlay so cards remain readable.
-        bgcolor: 'rgba(248, 250, 252, 0.9)',
+        bgcolor: 'background.default',
         display: 'flex',
         flexDirection: 'column',
       }}
