@@ -41,6 +41,7 @@ import { EventAttendanceDialog } from './components/EventAttendanceDialog'
 import { Login } from './Login.tsx'
 import { UserSettingsDialog } from './components/UserSettingsDialog'
 import { API_URL, API_BASE } from './config'
+import { useGpsTracking } from './hooks/useGpsTracking'
 
 function App() {
   const theme = useTheme()
@@ -104,6 +105,7 @@ function App() {
       : '')
 
   const currentUserMemberId = auth ? `user-${auth.userId}` : undefined
+  const gps = useGpsTracking(auth?.token ?? null)
 
   // Handle OAuth callback hash from Google/Facebook
   useEffect(() => {
@@ -254,6 +256,15 @@ function App() {
       ),
     )
 
+    // Start/stop GPS tracking when the current user toggles their own status
+    if (currentUserMemberId && memberId === currentUserMemberId) {
+      if (nextEventStatus === 'in') {
+        gps.start()
+      } else {
+        gps.stop()
+      }
+    }
+
     try {
       await fetch(`${API_URL}/attendance/${activeEvent.id}/toggle/${memberId}`, {
         method: 'POST',
@@ -348,6 +359,8 @@ function App() {
 
   const handleLeaveActiveEvent = async () => {
     if (!auth || !activeEvent) return
+
+    gps.stop()
 
     try {
       const res = await fetch(`${API_URL}/events/${activeEvent.id}/leave`, {

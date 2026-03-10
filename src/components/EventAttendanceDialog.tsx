@@ -24,10 +24,12 @@ import {
   DeleteOutline,
   Phone,
   Sms,
+  Map as MapIcon,
 } from '@mui/icons-material'
 import type { ClubEvent, Member } from '../types'
 import { API_BASE } from '../config'
 import { EventAttendanceSummary } from './EventAttendanceSummary'
+import { EventLocationMap } from './EventLocationMap'
 
 function ToggleActionButton({
   isIn,
@@ -100,6 +102,14 @@ export function EventAttendanceDialog(props: {
     currentUserAvatarUrl,
     onDeleteEvent,
   } = props
+
+  const [showMap, setShowMap] = useState(false)
+
+  const hasOnCourseMembers =
+    event &&
+    members.some(
+      (m) => attendance[event.id]?.[m.id] === 'in',
+    )
 
   return (
     <Dialog
@@ -290,6 +300,27 @@ export function EventAttendanceDialog(props: {
                 )
               })}
             </List>
+
+            <Button
+              variant={showMap ? 'contained' : 'outlined'}
+              size="small"
+              startIcon={<MapIcon />}
+              onClick={() => setShowMap((v) => !v)}
+              disabled={!hasOnCourseMembers && !showMap}
+              sx={{ borderRadius: 999, fontSize: 13, alignSelf: 'flex-start' }}
+            >
+              {showMap ? 'Hide map' : 'Show map'}
+            </Button>
+            {!hasOnCourseMembers && !showMap && (
+              <Typography variant="caption" color="text.secondary">
+                The map will be available when members are on course and sharing
+                their location.
+              </Typography>
+            )}
+
+            {event && (
+              <EventLocationMap eventId={event.id} visible={showMap} />
+            )}
           </Stack>
         )}
       </DialogContent>

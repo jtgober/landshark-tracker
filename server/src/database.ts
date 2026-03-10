@@ -72,6 +72,14 @@ export const initDb = async () => {
       FOREIGN KEY (event_id) REFERENCES events(id),
       FOREIGN KEY (user_id) REFERENCES users(id)
     );
+
+    CREATE TABLE IF NOT EXISTS user_locations (
+      user_id TEXT PRIMARY KEY,
+      lat REAL NOT NULL,
+      lng REAL NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
   `);
 
   // Lightweight migration: ensure avatar columns exist on existing databases
