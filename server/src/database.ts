@@ -103,9 +103,14 @@ export const initDb = async () => {
     // Safe to ignore if these rows never existed
   }
 
-  // Seed default members if none exist
+  // Seed default data only when BOTH members and events are empty.
+  // This avoids UNIQUE constraint errors if events were already created earlier.
   const membersCount = await db.execute('SELECT COUNT(*) as count FROM members');
-  if (Number(membersCount.rows[0].count) === 0) {
+  const eventsCount = await db.execute('SELECT COUNT(*) as count FROM events');
+  if (
+    Number(membersCount.rows[0].count) === 0 &&
+    Number(eventsCount.rows[0].count) === 0
+  ) {
     console.log('Seeding default data...');
     
     await db.executeMultiple(`

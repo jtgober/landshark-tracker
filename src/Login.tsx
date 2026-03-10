@@ -121,7 +121,7 @@ export function Login({ onAuthSuccess }: LoginProps) {
             variant="h5"
             sx={{ fontWeight: 800, mb: 0.5, color: '#006d77' }}
           >
-            shark tracker
+            Shark Tracker
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
             Club check-in & event safety

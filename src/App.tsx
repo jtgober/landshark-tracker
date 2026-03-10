@@ -475,8 +475,8 @@ function App() {
               src="/landsharks-logo.png"
               alt="Louisville Landsharks"
               sx={{
-                width: 40,
-                height: 40,
+                width: 50,
+                height: 50,
                 mr: 1.5,
                 borderRadius: '25%',
                 bgcolor: 'transparent',
@@ -490,7 +490,7 @@ function App() {
                 variant="h6"
                 sx={{ fontWeight: 700, letterSpacing: 0.2 }}
               >
-                shark tracker
+                Shark Tracker
               </Typography>
               <Typography variant="body2" sx={{ opacity: 0.9 }}>
                 Cycling · Swimming · Running
