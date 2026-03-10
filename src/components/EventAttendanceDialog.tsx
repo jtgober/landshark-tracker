@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   Avatar,
   Button,
@@ -14,11 +15,55 @@ import {
   Stack,
   Typography,
   Box,
+  Tooltip,
 } from '@mui/material'
 import { CheckCircle, Login, Logout, DeleteOutline } from '@mui/icons-material'
 import type { ClubEvent, Member } from '../types'
 import { API_BASE } from '../config'
 import { EventAttendanceSummary } from './EventAttendanceSummary'
+
+function ToggleActionButton({
+  isIn,
+  onToggle,
+}: {
+  isIn: boolean
+  onToggle: () => void
+}) {
+  const [animating, setAnimating] = useState(false)
+
+  const handleClick = () => {
+    setAnimating(true)
+    onToggle()
+    setTimeout(() => setAnimating(false), 420)
+  }
+
+  return (
+    <Tooltip title={isIn ? 'Sign out' : 'Check in'} placement="left">
+      <IconButton
+        aria-label={isIn ? 'Sign out' : 'Check in'}
+        onClick={handleClick}
+        size="medium"
+        color={isIn ? 'inherit' : 'primary'}
+        sx={{
+          bgcolor: isIn ? 'rgba(0, 109, 119, 0.08)' : 'primary.main',
+          color: isIn ? 'text.primary' : 'primary.contrastText',
+          '&:hover': {
+            bgcolor: isIn ? 'rgba(0, 109, 119, 0.16)' : 'primary.dark',
+          },
+          '@keyframes tapPop': {
+            '0%': { transform: 'scale(1)' },
+            '35%': { transform: 'scale(1.4)' },
+            '55%': { transform: 'scale(1.4)' },
+            '100%': { transform: 'scale(1)' },
+          },
+          animation: animating ? 'tapPop 0.42s ease' : 'none',
+        }}
+      >
+        {isIn ? <Logout fontSize="small" /> : <Login fontSize="small" />}
+      </IconButton>
+    </Tooltip>
+  )
+}
 
 export function EventAttendanceDialog(props: {
   event: ClubEvent | null
@@ -159,21 +204,10 @@ export function EventAttendanceDialog(props: {
                   <ListItem
                     key={member.id}
                     secondaryAction={
-                      <Button
-                        size="small"
-                        variant={isIn ? 'outlined' : 'contained'}
-                        color={isIn ? 'inherit' : 'primary'}
-                        startIcon={isIn ? <Logout /> : <Login />}
-                        onClick={() => onToggleAttendance(member.id)}
-                        sx={{
-                          borderRadius: 999,
-                          px: 1.6,
-                          minWidth: 'auto',
-                          fontSize: 13,
-                        }}
-                      >
-                        {isIn ? 'Signed out' : 'Checked in'}
-                      </Button>
+                      <ToggleActionButton
+                        isIn={isIn}
+                        onToggle={() => onToggleAttendance(member.id)}
+                      />
                     }
                   >
                     <ListItemAvatar>
