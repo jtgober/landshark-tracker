@@ -12,6 +12,7 @@ import attendanceRoutes from './routes/attendance.routes';
 import activityRoutes from './routes/activity.routes';
 import authRoutes from './routes/auth.routes';
 import locationRoutes from './routes/location.routes';
+import messageRoutes from './routes/messages.routes';
 
 dotenv.config();
 
@@ -43,6 +44,7 @@ app.use('/api/members', memberRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/activity', activityRoutes);
 app.use('/api/location', locationRoutes);
+app.use('/api/messages', messageRoutes);
 
 // Health check (includes DB mode so you can verify persistent disk is used)
 app.get('/api/health', (_req: Request, res: Response) => {

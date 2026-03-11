@@ -88,6 +88,18 @@ export const initDb = async () => {
       updated_at TEXT NOT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id)
     );
+
+    CREATE TABLE IF NOT EXISTS event_messages (
+      id TEXT PRIMARY KEY,
+      event_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      user_name TEXT NOT NULL,
+      avatar_color TEXT,
+      body TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (event_id) REFERENCES events(id),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
   `);
 
   // Lightweight migration: ensure avatar columns exist on existing databases

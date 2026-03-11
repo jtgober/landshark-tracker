@@ -30,6 +30,7 @@ import type { ClubEvent, Member } from '../types'
 import { API_BASE } from '../config'
 import { EventAttendanceSummary } from './EventAttendanceSummary'
 import { EventLocationMap } from './EventLocationMap'
+import { EventChat } from './EventChat'
 
 function ToggleActionButton({
   isIn,
@@ -87,6 +88,8 @@ export function EventAttendanceDialog(props: {
   currentUserMemberId?: string
   currentUserAvatarUrl?: string
   onDeleteEvent?: () => void
+  authToken?: string
+  currentUserId?: string
 }) {
   const {
     event,
@@ -101,6 +104,8 @@ export function EventAttendanceDialog(props: {
     currentUserMemberId,
     currentUserAvatarUrl,
     onDeleteEvent,
+    authToken,
+    currentUserId,
   } = props
 
   const [showMap, setShowMap] = useState(false)
@@ -319,6 +324,23 @@ export function EventAttendanceDialog(props: {
 
             {event && (
               <EventLocationMap eventId={event.id} visible={showMap} />
+            )}
+
+            {/* Chat */}
+            {event && authToken && currentUserId && (
+              <Box sx={{ mt: 1 }}>
+                <Typography
+                  variant="subtitle2"
+                  sx={{ fontWeight: 700, fontSize: 13.5, mb: 1, color: 'text.secondary' }}
+                >
+                  Event Chat
+                </Typography>
+                <EventChat
+                  eventId={event.id}
+                  token={authToken}
+                  currentUserId={currentUserId}
+                />
+              </Box>
             )}
           </Stack>
         )}

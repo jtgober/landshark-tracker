@@ -847,6 +847,8 @@ function App() {
         currentUserMemberId={currentUserMemberId}
         currentUserAvatarUrl={userAvatarUrl}
         onDeleteEvent={handleRequestDeleteActiveEvent}
+        authToken={auth.token}
+        currentUserId={auth.userId}
       />
 
       <Dialog
