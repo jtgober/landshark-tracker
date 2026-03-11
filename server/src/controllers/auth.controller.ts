@@ -528,7 +528,7 @@ async function resolveUserId(rawId: string): Promise<string | null> {
 export const getUsers = async (_req: Request, res: Response) => {
   try {
     const result = await db.execute(
-      'SELECT id, email, avatar_url, avatar_updated_at, phone, created_at FROM users',
+      'SELECT id, email, avatar_url, avatar_updated_at, phone, display_name, role, created_at FROM users ORDER BY created_at DESC',
     )
     res.json(result.rows)
   } catch (error) {
@@ -586,6 +586,31 @@ export const deleteUser = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('deleteUser error', error)
     res.status(500).json({ message: 'Failed to delete user' })
+  }
+}
+
+export const updateUserRole = async (req: AuthedRequest, res: Response) => {
+  const rawId = param(req.params.id)
+  const { role } = req.body as { role?: string }
+
+  if (!rawId) {
+    return res.status(400).json({ message: 'User ID is required' })
+  }
+  if (!role || !['admin', 'member'].includes(role)) {
+    return res.status(400).json({ message: 'Role must be "admin" or "member"' })
+  }
+
+  try {
+    const userId = await resolveUserId(rawId)
+    if (!userId) {
+      return res.status(404).json({ message: 'User not found' })
+    }
+
+    await db.execute('UPDATE users SET role = ? WHERE id = ?', [role, userId])
+    res.json({ id: userId, role })
+  } catch (error) {
+    console.error('updateUserRole error', error)
+    res.status(500).json({ message: 'Failed to update role' })
   }
 }
 

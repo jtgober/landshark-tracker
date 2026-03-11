@@ -29,8 +29,9 @@ import {
   Event as EventIcon,
   History,
   QrCodeScanner,
+  AdminPanelSettings,
 } from '@mui/icons-material'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useSyncExternalStore } from 'react'
 
 import type { Member, Activity, ClubEvent } from './types'
 
@@ -43,10 +44,26 @@ import { Login } from './Login.tsx'
 import { UserSettingsDialog } from './components/UserSettingsDialog'
 import { API_URL, API_BASE } from './config'
 import { useGpsTracking } from './hooks/useGpsTracking'
+import { AdminPanel } from './components/AdminPanel'
+
+function useOnlineStatus() {
+  return useSyncExternalStore(
+    (cb) => {
+      window.addEventListener('online', cb)
+      window.addEventListener('offline', cb)
+      return () => {
+        window.removeEventListener('online', cb)
+        window.removeEventListener('offline', cb)
+      }
+    },
+    () => navigator.onLine,
+  )
+}
 
 function App() {
   const theme = useTheme()
   const isSmall = useMediaQuery(theme.breakpoints.down('sm'))
+  const isOnline = useOnlineStatus()
 
   const [auth, setAuth] = useState<{
     token: string
@@ -79,6 +96,7 @@ function App() {
   )
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [showAdmin, setShowAdmin] = useState(false)
   const [phonePromptOpen, setPhonePromptOpen] = useState(false)
   const [phonePromptValue, setPhonePromptValue] = useState('')
   const [namePromptValue, setNamePromptValue] = useState('')
@@ -518,6 +536,26 @@ function App() {
         flexDirection: 'column',
       }}
     >
+      {!isOnline && (
+        <Box
+          sx={{
+            bgcolor: '#ff9800',
+            color: '#fff',
+            textAlign: 'center',
+            py: 0.5,
+            fontSize: 13,
+            fontWeight: 600,
+          }}
+        >
+          You're offline — showing cached data
+        </Box>
+      )}
+
+      {showAdmin && (
+        <AdminPanel auth={auth} onBack={() => setShowAdmin(false)} />
+      )}
+
+      {!showAdmin && (<>
       <AppBar
         position="static"
         elevation={0}
@@ -622,6 +660,17 @@ function App() {
         >
           User settings
         </MenuItem>
+        {auth.role === 'admin' && (
+          <MenuItem
+            onClick={() => {
+              handleCloseUserMenu()
+              setShowAdmin(true)
+            }}
+          >
+            <AdminPanelSettings sx={{ mr: 1, fontSize: 20, color: 'primary.main' }} />
+            Admin Panel
+          </MenuItem>
+        )}
         <MenuItem onClick={handleLogout}>Log out</MenuItem>
       </Menu>
 
@@ -960,6 +1009,7 @@ function App() {
           }
         }}
       />
+      </>)}
     </Box>
   )
 }

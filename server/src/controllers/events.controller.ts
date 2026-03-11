@@ -243,6 +243,58 @@ export const leaveEventForUser = async (req: AuthedRequest, res: Response) => {
   }
 };
 
+export const updateEvent = async (req: AuthedRequest, res: Response) => {
+  if (!req.user) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+
+  const eventId = param(req.params.id);
+  const { name, date, time, location, type, description } = req.body as {
+    name?: string
+    date?: string
+    time?: string
+    location?: string
+    type?: string
+    description?: string
+  };
+
+  try {
+    const existing = await db.execute(
+      'SELECT id FROM events WHERE id = ?',
+      [eventId],
+    );
+
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+
+    const fields: string[] = [];
+    const args: string[] = [];
+
+    if (name !== undefined) { fields.push('name = ?'); args.push(name); }
+    if (date !== undefined) { fields.push('date = ?'); args.push(date); }
+    if (time !== undefined) { fields.push('time = ?'); args.push(time); }
+    if (location !== undefined) { fields.push('location = ?'); args.push(location); }
+    if (type !== undefined) { fields.push('type = ?'); args.push(type); }
+    if (description !== undefined) { fields.push('description = ?'); args.push(description); }
+
+    if (fields.length === 0) {
+      return res.status(400).json({ message: 'No fields to update' });
+    }
+
+    args.push(eventId);
+    await db.execute(
+      `UPDATE events SET ${fields.join(', ')} WHERE id = ?`,
+      args,
+    );
+
+    const updated = await db.execute('SELECT * FROM events WHERE id = ?', [eventId]);
+    res.json(updated.rows[0]);
+  } catch {
+    res.status(500).json({ error: 'Failed to update event' });
+  }
+};
+
 export const deleteEvent = async (req: AuthedRequest, res: Response) => {
   if (!req.user) {
     return res.status(401).json({ message: 'Unauthorized' });

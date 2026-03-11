@@ -3,13 +3,14 @@ import {
   getEvents,
   getEventById,
   createEvent,
+  updateEvent,
   getMyEvents,
   joinEventForUser,
   toggleSelfAttendance,
   leaveEventForUser,
   deleteEvent,
 } from '../controllers/events.controller';
-import { requireAuth } from '../middleware/auth.middleware';
+import { requireAuth, requireAdmin } from '../middleware/auth.middleware';
 
 const router = Router();
 
@@ -106,7 +107,7 @@ router.get('/:id', getEventById);
  *             schema:
  *               $ref: '#/components/schemas/Event'
  */
-router.post('/', createEvent);
+router.post('/', requireAuth, requireAdmin, createEvent);
 
 /**
  * @openapi
@@ -182,6 +183,37 @@ router.post('/:id/leave', requireAuth, leaveEventForUser);
  *       204:
  *         description: Deleted
  */
-router.delete('/:id', requireAuth, deleteEvent);
+/**
+ * @openapi
+ * /events/{id}:
+ *   patch:
+ *     tags: [Events]
+ *     summary: Update an event (admin only)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name: { type: string }
+ *               date: { type: string }
+ *               time: { type: string }
+ *               location: { type: string }
+ *               type: { type: string, enum: [cycling, swimming, running] }
+ *               description: { type: string }
+ *     responses:
+ *       200:
+ *         description: Updated event
+ */
+router.patch('/:id', requireAuth, requireAdmin, updateEvent);
+
+router.delete('/:id', requireAuth, requireAdmin, deleteEvent);
 
 export default router;

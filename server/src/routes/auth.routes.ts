@@ -8,6 +8,7 @@ import {
   getUsers,
   getUserById,
   deleteUser,
+  updateUserRole,
   forgotPassword,
   resetPassword,
   socialLoginDev,
@@ -342,5 +343,35 @@ router.get('/users/:id', requireAuth, requireAdmin, getUserById)
  *         description: User not found
  */
 router.delete('/users/:id', requireAuth, requireAdmin, deleteUser)
+
+/**
+ * @openapi
+ * /auth/users/{id}/role:
+ *   patch:
+ *     tags: [Users]
+ *     summary: Update a user's role (admin only)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [role]
+ *             properties:
+ *               role: { type: string, enum: [admin, member] }
+ *     responses:
+ *       200:
+ *         description: Role updated
+ *       404:
+ *         description: User not found
+ */
+router.patch('/users/:id/role', requireAuth, requireAdmin, updateUserRole)
 
 export default router
