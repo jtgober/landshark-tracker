@@ -16,7 +16,7 @@ import {
   startFacebookOAuth,
   facebookOAuthCallback,
 } from '../controllers/auth.controller'
-import { requireAuth } from '../middleware/auth.middleware'
+import { requireAuth, requireAdmin } from '../middleware/auth.middleware'
 import { avatarUpload } from '../middleware/avatarUpload'
 
 const router = Router()
@@ -278,7 +278,9 @@ router.post('/social/dev', socialLoginDev)
  * /auth/users:
  *   get:
  *     tags: [Users]
- *     summary: List all users
+ *     summary: List all users (admin only)
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Array of users
@@ -295,14 +297,16 @@ router.post('/social/dev', socialLoginDev)
  *                   phone: { type: string, nullable: true }
  *                   created_at: { type: string }
  */
-router.get('/users', getUsers)
+router.get('/users', requireAuth, requireAdmin, getUsers)
 
 /**
  * @openapi
  * /auth/users/{id}:
  *   get:
  *     tags: [Users]
- *     summary: Get a user by ID (accepts user ID or member ID format)
+ *     summary: Get a user by ID (admin only)
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -315,14 +319,16 @@ router.get('/users', getUsers)
  *       404:
  *         description: User not found
  */
-router.get('/users/:id', getUserById)
+router.get('/users/:id', requireAuth, requireAdmin, getUserById)
 
 /**
  * @openapi
  * /auth/users/{id}:
  *   delete:
  *     tags: [Users]
- *     summary: Delete a user by ID (accepts user ID or member ID format)
+ *     summary: Delete a user by ID (admin only)
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -335,6 +341,6 @@ router.get('/users/:id', getUserById)
  *       404:
  *         description: User not found
  */
-router.delete('/users/:id', deleteUser)
+router.delete('/users/:id', requireAuth, requireAdmin, deleteUser)
 
 export default router

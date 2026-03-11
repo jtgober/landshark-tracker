@@ -15,7 +15,7 @@ import { useState } from 'react'
 import { API_URL } from './config'
 
 type LoginProps = {
-  onAuthSuccess: (payload: { token: string; email: string; userId: string }) => void
+  onAuthSuccess: (payload: { token: string; email: string; userId: string; role?: string }) => void
 }
 
 export function Login({ onAuthSuccess }: LoginProps) {
@@ -66,6 +66,7 @@ export function Login({ onAuthSuccess }: LoginProps) {
         token: data.token,
         email: data.user.email,
         userId: data.user.id,
+        role: data.user.role,
       })
     } catch {
       setError('Network error, please try again')

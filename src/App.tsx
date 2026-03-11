@@ -52,11 +52,13 @@ function App() {
     token: string
     email: string
     userId: string
+    role: string
   } | null>(() => {
     const token = localStorage.getItem('authToken')
     const email = localStorage.getItem('authEmail')
     const userId = localStorage.getItem('authUserId')
-    return token && email && userId ? { token, email, userId } : null
+    const role = localStorage.getItem('authRole') || 'member'
+    return token && email && userId ? { token, email, userId, role } : null
   })
 
   const [tab, setTab] = useState(0) // 0 = Events, 1 = Activity
@@ -127,7 +129,7 @@ function App() {
       localStorage.setItem('authToken', token)
       localStorage.setItem('authEmail', email)
       localStorage.setItem('authUserId', userId)
-      setAuth({ token, email, userId })
+      setAuth({ token, email, userId, role: 'member' })
     }
 
     window.history.replaceState(null, '', '/')
@@ -152,6 +154,7 @@ function App() {
                 avatarUpdatedAt?: string
                 phone?: string
                 displayName?: string
+                role?: string
               }
             | null,
         ) => {
@@ -162,6 +165,10 @@ function App() {
           }
           if (profile.displayName !== undefined) {
             localStorage.setItem(`authDisplayName_${auth.userId}`, profile.displayName ?? '')
+          }
+          if (profile.role) {
+            localStorage.setItem('authRole', profile.role)
+            setAuth((prev) => prev ? { ...prev, role: profile.role! } : prev)
           }
           // Prompt for display name + phone if either is missing
           if (
@@ -465,6 +472,7 @@ function App() {
     localStorage.removeItem('authToken')
     localStorage.removeItem('authEmail')
     localStorage.removeItem('authUserId')
+    localStorage.removeItem('authRole')
     setAuth(null)
     setMembers([])
     setActivity([])
@@ -483,15 +491,19 @@ function App() {
           token,
           email,
           userId,
+          role,
         }: {
           token: string
           email: string
           userId: string
+          role?: string
         }) => {
+          const userRole = role || 'member'
           localStorage.setItem('authToken', token)
           localStorage.setItem('authEmail', email)
           localStorage.setItem('authUserId', userId)
-          setAuth({ token, email, userId })
+          localStorage.setItem('authRole', userRole)
+          setAuth({ token, email, userId, role: userRole })
         }}
       />
     )

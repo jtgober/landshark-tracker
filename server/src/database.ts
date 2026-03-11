@@ -116,8 +116,23 @@ export const initDb = async () => {
     if (displayNameInfo.rows.length === 0) {
       await db.execute('ALTER TABLE users ADD COLUMN display_name TEXT');
     }
+    const roleInfo = await db.execute(
+      "SELECT name FROM pragma_table_info('users') WHERE name = 'role'",
+    );
+    if (roleInfo.rows.length === 0) {
+      await db.execute("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'member'");
+    }
   } catch {
     // If this fails, we just skip; app will fall back to default avatar
+  }
+
+  // Auto-promote admin based on ADMIN_EMAIL env var
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (adminEmail) {
+    await db.execute(
+      "UPDATE users SET role = 'admin' WHERE email = ? AND role != 'admin'",
+      [adminEmail],
+    );
   }
 
   // One-time cleanup of original dummy member/activity rows

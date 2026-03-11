@@ -38,14 +38,17 @@ const FACEBOOK_REDIRECT_URI =
 const createUserId = () =>
   `user-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 
-async function ensureUserForEmail(email: string) {
+async function ensureUserForEmail(email: string): Promise<{ id: string; role: string }> {
   const existing = await db.execute({
-    sql: 'SELECT id FROM users WHERE email = ?',
+    sql: 'SELECT id, role FROM users WHERE email = ?',
     args: [email],
   })
 
   if (existing.rows.length > 0) {
-    return existing.rows[0].id as string
+    return {
+      id: existing.rows[0].id as string,
+      role: (existing.rows[0].role as string) || 'member',
+    }
   }
 
   const passwordHash = await bcrypt.hash(
@@ -60,7 +63,7 @@ async function ensureUserForEmail(email: string) {
     args: [id, email, passwordHash, createdAt],
   })
 
-  return id
+  return { id, role: 'member' }
 }
 
 export const signup = async (req: Request, res: Response) => {
@@ -89,13 +92,20 @@ export const signup = async (req: Request, res: Response) => {
       args: [id, email, passwordHash, createdAt],
     })
 
-    const token = jwt.sign({ sub: id, email }, JWT_SECRET, {
+    // New users default to 'member'; auto-promote if they match ADMIN_EMAIL
+    const adminEmail = process.env.ADMIN_EMAIL
+    const role = adminEmail && email.toLowerCase() === adminEmail.toLowerCase() ? 'admin' : 'member'
+    if (role === 'admin') {
+      await db.execute({ sql: "UPDATE users SET role = 'admin' WHERE id = ?", args: [id] })
+    }
+
+    const token = jwt.sign({ sub: id, email, role }, JWT_SECRET, {
       expiresIn: TOKEN_EXPIRY,
     })
 
     res.status(201).json({
       token,
-      user: { id, email },
+      user: { id, email, role },
     })
   } catch (error) {
     console.error('Signup error', error)
@@ -112,7 +122,7 @@ export const login = async (req: Request, res: Response) => {
 
   try {
     const result = await db.execute({
-      sql: 'SELECT id, password_hash FROM users WHERE email = ?',
+      sql: 'SELECT id, password_hash, role FROM users WHERE email = ?',
       args: [email],
     })
 
@@ -123,19 +133,20 @@ export const login = async (req: Request, res: Response) => {
     const row = result.rows[0]
     const userId = row.id as string
     const passwordHash = row.password_hash as string
+    const role = (row.role as string) || 'member'
 
     const isMatch = await bcrypt.compare(password, passwordHash)
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid email or password' })
     }
 
-    const token = jwt.sign({ sub: userId, email }, JWT_SECRET, {
+    const token = jwt.sign({ sub: userId, email, role }, JWT_SECRET, {
       expiresIn: TOKEN_EXPIRY,
     })
 
     res.json({
       token,
-      user: { id: userId, email },
+      user: { id: userId, email, role },
     })
   } catch (error) {
     console.error('Login error', error)
@@ -154,14 +165,16 @@ export const socialLoginDev = async (req: Request, res: Response) => {
 
   try {
     const existing = await db.execute({
-      sql: 'SELECT id, email FROM users WHERE email = ?',
+      sql: 'SELECT id, email, role FROM users WHERE email = ?',
       args: [email],
     })
 
     let userId: string
+    let role = 'member'
 
     if (existing.rows.length > 0) {
       userId = existing.rows[0].id as string
+      role = (existing.rows[0].role as string) || 'member'
     } else {
       const passwordHash = await bcrypt.hash(
         `${provider}-${Math.random().toString(36).slice(2, 10)}`,
@@ -176,13 +189,13 @@ export const socialLoginDev = async (req: Request, res: Response) => {
       })
     }
 
-    const token = jwt.sign({ sub: userId, email }, JWT_SECRET, {
+    const token = jwt.sign({ sub: userId, email, role }, JWT_SECRET, {
       expiresIn: TOKEN_EXPIRY,
     })
 
     res.json({
       token,
-      user: { id: userId, email },
+      user: { id: userId, email, role },
     })
   } catch (error) {
     console.error('socialLoginDev error', error)
@@ -197,7 +210,7 @@ export const getMe = async (req: AuthedRequest, res: Response) => {
 
   try {
     const result = await db.execute(
-      'SELECT email, avatar_url, avatar_updated_at, phone, display_name FROM users WHERE id = ?',
+      'SELECT email, avatar_url, avatar_updated_at, phone, display_name, role FROM users WHERE id = ?',
       [req.user.id],
     )
     if (result.rows.length === 0) {
@@ -210,6 +223,7 @@ export const getMe = async (req: AuthedRequest, res: Response) => {
       avatarUpdatedAt: (row.avatar_updated_at as string | null) ?? undefined,
       phone: (row.phone as string | null) ?? undefined,
       displayName: (row.display_name as string | null) ?? undefined,
+      role: (row.role as string) || 'member',
     })
   } catch {
     res.status(500).json({ message: 'Failed to fetch profile' })
@@ -397,9 +411,9 @@ export const googleOAuthCallback = async (req: Request, res: Response) => {
       return res.status(500).send('Google account has no email')
     }
 
-    const userId = await ensureUserForEmail(email)
+    const { id: userId, role } = await ensureUserForEmail(email)
 
-    const token = jwt.sign({ sub: userId, email }, JWT_SECRET, {
+    const token = jwt.sign({ sub: userId, email, role }, JWT_SECRET, {
       expiresIn: TOKEN_EXPIRY,
     })
 
@@ -479,9 +493,9 @@ export const facebookOAuthCallback = async (req: Request, res: Response) => {
       email = `${profile.id ?? 'unknown'}@facebook.local`
     }
 
-    const userId = await ensureUserForEmail(email)
+    const { id: userId, role } = await ensureUserForEmail(email)
 
-    const token = jwt.sign({ sub: userId, email }, JWT_SECRET, {
+    const token = jwt.sign({ sub: userId, email, role }, JWT_SECRET, {
       expiresIn: TOKEN_EXPIRY,
     })
 
