@@ -32,7 +32,6 @@ import {
   CheckCircle,
   Event as EventIcon,
   History,
-  QrCodeScanner,
   AdminPanelSettings,
   DarkMode,
   LightMode,
@@ -662,16 +661,6 @@ function AppContent({ themeMode, onToggleTheme }: { themeMode: ThemeMode; onTogg
             onClick={() => setDrawerOpen(true)}
           >
             <EventIcon />
-          </IconButton>
-          <IconButton
-            color="inherit"
-            size="small"
-            sx={{
-              bgcolor: 'rgba(255,255,255,0.16)',
-              '&:hover': { bgcolor: 'rgba(255,255,255,0.24)' },
-            }}
-          >
-            <QrCodeScanner />
           </IconButton>
           <IconButton
             onClick={handleOpenUserMenu}
