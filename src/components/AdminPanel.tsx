@@ -34,7 +34,7 @@ import {
   Add,
   ArrowBack,
 } from '@mui/icons-material'
-import { API_URL } from '../config'
+import { API_URL, API_BASE } from '../config'
 
 type User = {
   id: string
@@ -43,6 +43,7 @@ type User = {
   phone?: string | null
   role?: string
   avatar_url?: string | null
+  avatar_updated_at?: string | null
   created_at: string
 }
 
@@ -266,7 +267,13 @@ function UsersTable({
                 <TableCell>
                   <Stack direction="row" alignItems="center" spacing={1.5}>
                     <Avatar
-                      src={u.avatar_url ?? undefined}
+                      src={
+                        u.avatar_url
+                          ? u.avatar_url.startsWith('http')
+                            ? u.avatar_url
+                            : `${API_BASE}${u.avatar_url}${u.avatar_updated_at ? `?v=${u.avatar_updated_at}` : ''}`
+                          : undefined
+                      }
                       sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: 14 }}
                     >
                       {(u.display_name || u.email).charAt(0).toUpperCase()}
