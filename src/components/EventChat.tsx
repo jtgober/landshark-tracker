@@ -35,7 +35,7 @@ export function EventChat({ eventId, token, currentUserId }: Props) {
   const [sending, setSending] = useState(false)
   const [loading, setLoading] = useState(true)
   const bottomRef = useRef<HTMLDivElement | null>(null)
-  const pollRef = useRef<ReturnType<typeof setInterval>>()
+  const pollRef = useRef<ReturnType<typeof setInterval>>(undefined)
 
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
 
