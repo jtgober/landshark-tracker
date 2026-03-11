@@ -9,7 +9,7 @@ import {
   Divider,
   Alert,
 } from '@mui/material'
-import { Google, Facebook, Login as LoginIcon } from '@mui/icons-material'
+import { Google, Login as LoginIcon } from '@mui/icons-material'
 import { useState } from 'react'
 
 import { API_URL } from './config'
@@ -307,24 +307,6 @@ export function Login({ onAuthSuccess }: LoginProps) {
                   }}
                 >
                   Continue with Google
-                </Button>
-                <Button
-                  variant="outlined"
-                  size="large"
-                  startIcon={<Facebook />}
-                  onClick={() => handleSocialLogin('facebook')}
-                  sx={{
-                    py: 1.25,
-                    borderRadius: 999,
-                    color: '#4267B2',
-                    borderColor: 'rgba(66, 103, 178, 0.5)',
-                    '&:hover': {
-                      borderColor: '#4267B2',
-                      bgcolor: 'rgba(66, 103, 178, 0.04)',
-                    },
-                  }}
-                >
-                  Continue with Facebook
                 </Button>
               </Stack>
             </>
