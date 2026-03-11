@@ -5,9 +5,23 @@ import { db } from '../database'
 import { param } from '../utils/params'
 import type { AuthedRequest } from '../middleware/auth.middleware'
 
+import crypto from 'crypto'
+import nodemailer from 'nodemailer'
+
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me'
 const TOKEN_EXPIRY = '7d'
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173'
+
+const smtpTransport =
+  process.env.SMTP_USER && process.env.SMTP_PASS
+    ? nodemailer.createTransport({
+        service: process.env.SMTP_SERVICE || 'gmail',
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
+        },
+      })
+    : null
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET
@@ -541,6 +555,112 @@ export const deleteUser = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('deleteUser error', error)
     res.status(500).json({ message: 'Failed to delete user' })
+  }
+}
+
+export const forgotPassword = async (req: Request, res: Response) => {
+  const { email } = req.body as { email?: string }
+
+  if (!email) {
+    return res.status(400).json({ message: 'Email is required' })
+  }
+
+  try {
+    const user = await db.execute('SELECT id FROM users WHERE email = ?', [email])
+
+    // Always return success to avoid leaking whether the email exists
+    if (user.rows.length === 0) {
+      return res.json({ message: 'If that email exists, a reset link has been generated.' })
+    }
+
+    const userId = user.rows[0].id as string
+    const token = crypto.randomBytes(32).toString('hex')
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString() // 1 hour
+
+    await db.execute(
+      'INSERT INTO password_reset_tokens (token, user_id, expires_at) VALUES (?, ?, ?)',
+      [token, userId, expiresAt],
+    )
+
+    const resetUrl = `${FRONTEND_URL}/reset-password?token=${token}`
+
+    if (smtpTransport) {
+      await smtpTransport.sendMail({
+        from: `"Shark Tracker" <${process.env.SMTP_USER}>`,
+        to: email,
+        subject: 'Reset your Shark Tracker password',
+        html: `
+          <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px">
+            <h2 style="color:#006d77">Password Reset</h2>
+            <p>You requested a password reset for your Shark Tracker account.</p>
+            <p>Click the button below to set a new password. This link expires in 1 hour.</p>
+            <a href="${resetUrl}"
+               style="display:inline-block;padding:12px 28px;background:#006d77;color:#fff;
+                      text-decoration:none;border-radius:999px;font-weight:600;margin:16px 0">
+              Reset Password
+            </a>
+            <p style="font-size:13px;color:#888">
+              If you didn't request this, you can safely ignore this email.
+            </p>
+            <p style="font-size:12px;color:#aaa;margin-top:24px">
+              Or copy this link: ${resetUrl}
+            </p>
+          </div>
+        `,
+      })
+      console.log(`[Password Reset] Email sent to ${email}`)
+    } else {
+      console.log(`[Password Reset] No SMTP configured. Link for ${email}: ${resetUrl}`)
+    }
+
+    res.json({ message: 'If that email exists, a reset link has been sent.' })
+  } catch (error) {
+    console.error('forgotPassword error', error)
+    res.status(500).json({ message: 'Failed to process request' })
+  }
+}
+
+export const resetPassword = async (req: Request, res: Response) => {
+  const { token, password } = req.body as { token?: string; password?: string }
+
+  if (!token || !password) {
+    return res.status(400).json({ message: 'Token and password are required' })
+  }
+
+  if (password.length < 6) {
+    return res.status(400).json({ message: 'Password must be at least 6 characters' })
+  }
+
+  try {
+    const result = await db.execute(
+      'SELECT user_id, expires_at, used FROM password_reset_tokens WHERE token = ?',
+      [token],
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ message: 'Invalid or expired reset link' })
+    }
+
+    const row = result.rows[0]
+    if (row.used) {
+      return res.status(400).json({ message: 'This reset link has already been used' })
+    }
+
+    const expiresAt = new Date(row.expires_at as string)
+    if (expiresAt < new Date()) {
+      return res.status(400).json({ message: 'This reset link has expired' })
+    }
+
+    const userId = row.user_id as string
+    const passwordHash = await bcrypt.hash(password, 10)
+
+    await db.execute('UPDATE users SET password_hash = ? WHERE id = ?', [passwordHash, userId])
+    await db.execute('UPDATE password_reset_tokens SET used = 1 WHERE token = ?', [token])
+
+    res.json({ message: 'Password has been reset successfully' })
+  } catch (error) {
+    console.error('resetPassword error', error)
+    res.status(500).json({ message: 'Failed to reset password' })
   }
 }
 

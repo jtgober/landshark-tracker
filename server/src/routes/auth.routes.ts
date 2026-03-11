@@ -8,6 +8,8 @@ import {
   getUsers,
   getUserById,
   deleteUser,
+  forgotPassword,
+  resetPassword,
   socialLoginDev,
   startGoogleOAuth,
   googleOAuthCallback,
@@ -70,6 +72,51 @@ router.post('/signup', signup)
  *               $ref: '#/components/schemas/AuthResponse'
  */
 router.post('/login', login)
+
+/**
+ * @openapi
+ * /auth/forgot-password:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Request a password reset link
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email]
+ *             properties:
+ *               email: { type: string }
+ *     responses:
+ *       200:
+ *         description: Reset link generated (check server logs)
+ */
+router.post('/forgot-password', forgotPassword)
+
+/**
+ * @openapi
+ * /auth/reset-password:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Reset password using a token
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [token, password]
+ *             properties:
+ *               token: { type: string }
+ *               password: { type: string }
+ *     responses:
+ *       200:
+ *         description: Password reset successfully
+ *       400:
+ *         description: Invalid or expired token
+ */
+router.post('/reset-password', resetPassword)
 
 /**
  * @openapi
