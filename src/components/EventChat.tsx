@@ -156,7 +156,7 @@ export function EventChat({ eventId, token, currentUserId }: Props) {
               </Avatar>
               <Box
                 sx={{
-                  bgcolor: isOwn ? 'primary.main' : 'rgba(0,0,0,0.04)',
+                  bgcolor: isOwn ? 'primary.main' : 'action.hover',
                   color: isOwn ? 'primary.contrastText' : 'text.primary',
                   borderRadius: 2.5,
                   px: 1.5,

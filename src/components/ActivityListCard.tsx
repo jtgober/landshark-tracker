@@ -19,8 +19,9 @@ export function ActivityListCard(props: { activity: Activity[] }) {
       sx={{
         p: 1,
         borderRadius: 3,
-        backgroundColor: '#ffffff',
-        border: '1px solid rgba(0,0,0,0.04)',
+        bgcolor: 'background.paper',
+        border: 1,
+        borderColor: 'divider',
       }}
     >
       <List dense disablePadding>

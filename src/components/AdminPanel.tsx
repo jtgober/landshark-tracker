@@ -267,7 +267,7 @@ function UsersTable({
                   <Stack direction="row" alignItems="center" spacing={1.5}>
                     <Avatar
                       src={u.avatar_url ?? undefined}
-                      sx={{ width: 32, height: 32, bgcolor: '#006d77', fontSize: 14 }}
+                      sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: 14 }}
                     >
                       {(u.display_name || u.email).charAt(0).toUpperCase()}
                     </Avatar>

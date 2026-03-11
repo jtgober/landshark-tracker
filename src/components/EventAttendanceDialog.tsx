@@ -55,10 +55,10 @@ function ToggleActionButton({
         size="medium"
         color={isIn ? 'inherit' : 'primary'}
         sx={{
-          bgcolor: isIn ? 'rgba(0, 109, 119, 0.08)' : 'primary.main',
+          bgcolor: isIn ? 'action.hover' : 'primary.main',
           color: isIn ? 'text.primary' : 'primary.contrastText',
           '&:hover': {
-            bgcolor: isIn ? 'rgba(0, 109, 119, 0.16)' : 'primary.dark',
+            bgcolor: isIn ? 'action.selected' : 'primary.dark',
           },
           '@keyframes tapPop': {
             '0%': { transform: 'scale(1)' },
@@ -139,8 +139,9 @@ export function EventAttendanceDialog(props: {
                   mt: 0.5,
                   p: 1.25,
                   borderRadius: 2,
-                  bgcolor: 'rgba(0,0,0,0.02)',
-                  border: '1px dashed rgba(0,0,0,0.08)',
+                  bgcolor: 'action.hover',
+                  border: '1px dashed',
+                  borderColor: 'divider',
                 }}
               >
                 <Stack
@@ -237,7 +238,7 @@ export function EventAttendanceDialog(props: {
                         src={avatarSrc}
                         sx={{
                           bgcolor: avatarSrc ? 'transparent' : member.avatarColor,
-                          color: avatarSrc ? undefined : '#002b36',
+                          color: avatarSrc ? undefined : 'text.primary',
                           fontWeight: 700,
                         }}
                       >
@@ -268,8 +269,8 @@ export function EventAttendanceDialog(props: {
                                 pl: 0.5,
                                 pr: 1,
                                 backgroundColor: isIn
-                                  ? 'rgba(0, 109, 119, 0.08)'
-                                  : 'rgba(158, 158, 158, 0.12)',
+                                  ? 'rgba(77, 182, 172, 0.15)'
+                                  : 'action.disabledBackground',
                               }}
                             />
                           </Box>

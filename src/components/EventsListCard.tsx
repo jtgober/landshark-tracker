@@ -62,8 +62,9 @@ export function EventsListCard(props: {
           sx={{
             p: 1.5,
             borderRadius: 3,
-            backgroundColor: '#ffffff',
-            border: '1px solid rgba(0,0,0,0.04)',
+            bgcolor: 'background.paper',
+            border: 1,
+            borderColor: 'divider',
             cursor: 'pointer',
             '&:active': { transform: 'scale(0.997)' },
           }}

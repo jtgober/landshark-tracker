@@ -1,9 +1,11 @@
+import { useMemo } from 'react'
 import {
   AppBar,
   Avatar,
   Box,
   Button,
   Container,
+  CssBaseline,
   IconButton,
   Menu,
   MenuItem,
@@ -15,6 +17,8 @@ import {
   Typography,
   useMediaQuery,
   useTheme,
+  ThemeProvider,
+  createTheme,
   BottomNavigation,
   BottomNavigationAction,
   Dialog,
@@ -30,6 +34,10 @@ import {
   History,
   QrCodeScanner,
   AdminPanelSettings,
+  DarkMode,
+  LightMode,
+  Settings,
+  Logout as LogoutIcon,
 } from '@mui/icons-material'
 import { useState, useEffect, useSyncExternalStore } from 'react'
 
@@ -46,6 +54,55 @@ import { API_URL, API_BASE } from './config'
 import { useGpsTracking } from './hooks/useGpsTracking'
 import { AdminPanel } from './components/AdminPanel'
 
+type ThemeMode = 'light' | 'dark'
+
+function buildTheme(mode: ThemeMode) {
+  const isDark = mode === 'dark'
+  return createTheme({
+    palette: {
+      mode,
+      primary: {
+        // WCAG-AA: #4db6ac on dark bg (#121212) = 7.4:1; on white = 3.2:1
+        // We use a lighter teal in dark mode for AA compliance on dark surfaces
+        main: isDark ? '#4db6ac' : '#006d77',
+        contrastText: isDark ? '#000' : '#fff',
+      },
+      secondary: {
+        main: isDark ? '#ffd54f' : '#ffb703',
+      },
+      background: {
+        default: isDark ? '#121212' : '#f5f5f5',
+        paper: isDark ? '#1e1e1e' : '#ffffff',
+      },
+      text: {
+        primary: isDark ? '#e0e0e0' : 'rgba(0, 0, 0, 0.87)',
+        secondary: isDark ? '#aaaaaa' : 'rgba(0, 0, 0, 0.6)',
+      },
+      divider: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)',
+    },
+    shape: {
+      borderRadius: 16,
+    },
+    components: {
+      MuiButton: {
+        styleOverrides: {
+          root: {
+            textTransform: 'none',
+            borderRadius: 999,
+          },
+        },
+      },
+      MuiPaper: {
+        styleOverrides: {
+          root: {
+            backgroundImage: 'none',
+          },
+        },
+      },
+    },
+  })
+}
+
 function useOnlineStatus() {
   return useSyncExternalStore(
     (cb) => {
@@ -60,7 +117,7 @@ function useOnlineStatus() {
   )
 }
 
-function App() {
+function AppContent({ themeMode, onToggleTheme }: { themeMode: ThemeMode; onToggleTheme: () => void }) {
   const theme = useTheme()
   const isSmall = useMediaQuery(theme.breakpoints.down('sm'))
   const isOnline = useOnlineStatus()
@@ -560,8 +617,9 @@ function App() {
         position="static"
         elevation={0}
         sx={{
-          background:
-            'radial-gradient(circle at top left, #00b4d8, #006d77 60%)',
+          background: themeMode === 'dark'
+            ? 'linear-gradient(135deg, #1a3a3a, #0d2626 60%)'
+            : 'radial-gradient(circle at top left, #00b4d8, #006d77 60%)',
         }}
       >
         <Toolbar sx={{ minHeight: 68 }}>
@@ -625,7 +683,7 @@ function App() {
               sx={{
                 width: 32,
                 height: 32,
-                bgcolor: '#ffb703',
+                bgcolor: 'secondary.main',
                 border: '2px solid rgba(255,255,255,0.9)',
               }}
             >
@@ -658,7 +716,20 @@ function App() {
             setSettingsOpen(true)
           }}
         >
+          <Settings sx={{ mr: 1, fontSize: 20, color: 'text.secondary' }} />
           User settings
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            onToggleTheme()
+          }}
+        >
+          {themeMode === 'dark' ? (
+            <LightMode sx={{ mr: 1, fontSize: 20, color: 'secondary.main' }} />
+          ) : (
+            <DarkMode sx={{ mr: 1, fontSize: 20, color: 'text.secondary' }} />
+          )}
+          {themeMode === 'dark' ? 'Light mode' : 'Dark mode'}
         </MenuItem>
         {auth.role === 'admin' && (
           <MenuItem
@@ -671,7 +742,10 @@ function App() {
             Admin Panel
           </MenuItem>
         )}
-        <MenuItem onClick={handleLogout}>Log out</MenuItem>
+        <MenuItem onClick={handleLogout}>
+          <LogoutIcon sx={{ mr: 1, fontSize: 20, color: 'error.main' }} />
+          Log out
+        </MenuItem>
       </Menu>
 
       <Container
@@ -689,11 +763,13 @@ function App() {
             sx={{
               borderRadius: 4,
               p: 2,
-              background:
-                'linear-gradient(145deg, #e0fbfc, rgba(255,255,255,0.96))',
-              border: '1px solid rgba(255,255,255,0.9)',
-              boxShadow:
-                '0 18px 45px rgba(15, 76, 92, 0.12), 0 2px 8px rgba(0,0,0,0.04)',
+              bgcolor: 'background.paper',
+              border: 1,
+              borderColor: 'divider',
+              boxShadow: (t) =>
+                t.palette.mode === 'dark'
+                  ? '0 4px 20px rgba(0,0,0,0.4)'
+                  : '0 18px 45px rgba(15, 76, 92, 0.12), 0 2px 8px rgba(0,0,0,0.04)',
             }}
           >
             <Stack direction="row" alignItems="center" spacing={2}>
@@ -702,7 +778,7 @@ function App() {
                   width: 54,
                   height: 54,
                   borderRadius: 4,
-                  bgcolor: 'rgba(0, 109, 119, 0.1)',
+                  bgcolor: 'action.hover',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -710,8 +786,8 @@ function App() {
               >
                 <Avatar
                   sx={{
-                    bgcolor: '#ffffff',
-                    color: '#006d77',
+                    bgcolor: 'background.paper',
+                    color: 'primary.main',
                     width: 40,
                     height: 40,
                     boxShadow: '0 6px 18px rgba(0,0,0,0.16)',
@@ -744,8 +820,9 @@ function App() {
             sx={{
               borderRadius: 999,
               px: 1,
-              backgroundColor: '#ffffff',
-              border: '1px solid rgba(0,0,0,0.04)',
+              bgcolor: 'background.paper',
+              border: 1,
+              borderColor: 'divider',
             }}
           >
             <Tabs
@@ -1013,6 +1090,31 @@ function App() {
       />
       </>)}
     </Box>
+  )
+}
+
+function App() {
+  const prefersDark = useMediaQuery('(prefers-color-scheme: dark)')
+  const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
+    const saved = localStorage.getItem('themeMode') as ThemeMode | null
+    return saved || (prefersDark ? 'dark' : 'light')
+  })
+
+  const theme = useMemo(() => buildTheme(themeMode), [themeMode])
+
+  const toggleTheme = () => {
+    setThemeMode((prev) => {
+      const next = prev === 'light' ? 'dark' : 'light'
+      localStorage.setItem('themeMode', next)
+      return next
+    })
+  }
+
+  return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <AppContent themeMode={themeMode} onToggleTheme={toggleTheme} />
+    </ThemeProvider>
   )
 }
 

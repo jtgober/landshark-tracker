@@ -41,8 +41,8 @@ export function MainDrawer(props: { open: boolean; onClose: () => void }) {
             <ListItemAvatar>
               <Avatar
                 sx={{
-                  bgcolor: 'rgba(0, 150, 199, 0.12)',
-                  color: '#006d77',
+                  bgcolor: 'action.hover',
+                  color: 'primary.main',
                 }}
               >
                 <DirectionsBike />

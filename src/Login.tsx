@@ -204,7 +204,7 @@ export function Login({ onAuthSuccess }: LoginProps) {
           </Box>
           <Typography
             variant="h5"
-            sx={{ fontWeight: 800, mb: 0.5, color: '#006d77' }}
+            sx={{ fontWeight: 800, mb: 0.5, color: 'primary.main' }}
           >
             Shark Tracker
           </Typography>

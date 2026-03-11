@@ -18,8 +18,9 @@ export function EventAttendanceSummary(props: {
       sx={{
         borderRadius: 3,
         p: 1.5,
-        background: 'linear-gradient(145deg, #e0fbfc, rgba(255,255,255,0.96))',
-        border: '1px solid rgba(255,255,255,0.9)',
+        bgcolor: 'action.hover',
+        border: 1,
+        borderColor: 'divider',
       }}
     >
       <Stack spacing={1}>
@@ -65,7 +66,7 @@ export function EventAttendanceSummary(props: {
                 sx={{
                   borderRadius: 999,
                   fontSize: 11.5,
-                  bgcolor: 'rgba(0, 109, 119, 0.08)',
+                  bgcolor: 'action.selected',
                 }}
               />
             ))}

@@ -174,7 +174,7 @@ export function UserSettingsDialog({
             <Stack direction="row" spacing={1.5} alignItems="center">
               <Avatar
                 src={avatarUrl}
-                sx={{ width: 40, height: 40, bgcolor: '#ffb703' }}
+                sx={{ width: 40, height: 40, bgcolor: 'secondary.main' }}
               >
                 {auth.email.charAt(0).toUpperCase()}
               </Avatar>
