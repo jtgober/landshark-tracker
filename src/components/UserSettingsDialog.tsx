@@ -25,9 +25,11 @@ type Props = {
     avatarUrl?: string
     avatarUpdatedAt?: string
     phone?: string
+    displayName?: string
   }) => void
   avatarUrl?: string
   phone?: string
+  displayName?: string
 }
 
 export function UserSettingsDialog({
@@ -37,10 +39,12 @@ export function UserSettingsDialog({
   onAuthUpdate,
   avatarUrl,
   phone: initialPhone,
+  displayName: initialDisplayName,
 }: Props) {
   const [email, setEmail] = useState(auth.email)
   const [password, setPassword] = useState('')
   const [phone, setPhone] = useState(initialPhone ?? '')
+  const [displayName, setDisplayName] = useState(initialDisplayName ?? '')
   const [savingProfile, setSavingProfile] = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -56,18 +60,23 @@ export function UserSettingsDialog({
     setPhone(initialPhone ?? '')
   }, [initialPhone])
 
+  useEffect(() => {
+    setDisplayName(initialDisplayName ?? '')
+  }, [initialDisplayName])
+
   const handleSaveProfile = async (event?: FormEvent) => {
     event?.preventDefault()
     resetMessages()
 
     setSavingProfile(true)
     try {
-      const body: { email?: string; password?: string; phone?: string } = {}
+      const body: { email?: string; password?: string; phone?: string; displayName?: string } = {}
       if (email && email !== auth.email) body.email = email
       if (password) body.password = password
       if (phone !== (initialPhone ?? '')) body.phone = phone
+      if (displayName !== (initialDisplayName ?? '')) body.displayName = displayName
 
-      if (!body.email && !body.password && body.phone === undefined) {
+      if (!body.email && !body.password && body.phone === undefined && body.displayName === undefined) {
         setError('No changes to save.')
         return
       }
@@ -87,7 +96,7 @@ export function UserSettingsDialog({
         return
       }
 
-      onAuthUpdate({ email: data.email, phone: data.phone })
+      onAuthUpdate({ email: data.email, phone: data.phone, displayName: data.displayName })
       setPassword('')
       setMessage('Profile updated.')
     } catch {
@@ -198,6 +207,18 @@ export function UserSettingsDialog({
           <Box component="form" onSubmit={handleSaveProfile}>
             <Stack spacing={1.5}>
               <Typography variant="subtitle2" sx={{ fontSize: 13, opacity: 0.8 }}>
+                Display name
+              </Typography>
+              <TextField
+                label="Display name"
+                fullWidth
+                placeholder="e.g. Jonathan Gober"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                helperText="This is the name shown to other members in events."
+              />
+
+              <Typography variant="subtitle2" sx={{ fontSize: 13, opacity: 0.8, mt: 1 }}>
                 Phone number
               </Typography>
               <TextField

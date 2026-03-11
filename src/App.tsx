@@ -79,6 +79,7 @@ function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [phonePromptOpen, setPhonePromptOpen] = useState(false)
   const [phonePromptValue, setPhonePromptValue] = useState('')
+  const [namePromptValue, setNamePromptValue] = useState('')
   const [phonePromptSaving, setPhonePromptSaving] = useState(false)
   const [, setAvatarTick] = useState(0)
   const [dataVersion, setDataVersion] = useState(0)
@@ -150,6 +151,7 @@ function App() {
                 avatarUrl?: string
                 avatarUpdatedAt?: string
                 phone?: string
+                displayName?: string
               }
             | null,
         ) => {
@@ -158,7 +160,14 @@ function App() {
           if (profile.phone !== undefined) {
             localStorage.setItem(`authPhone_${auth.userId}`, profile.phone ?? '')
           }
-          if (!profile.phone && !sessionStorage.getItem('phonePromptDismissed')) {
+          if (profile.displayName !== undefined) {
+            localStorage.setItem(`authDisplayName_${auth.userId}`, profile.displayName ?? '')
+          }
+          // Prompt for display name + phone if either is missing
+          if (
+            (!profile.displayName || !profile.phone) &&
+            !sessionStorage.getItem('phonePromptDismissed')
+          ) {
             setPhonePromptOpen(true)
           }
           if (profile.avatarUrl != null) {
@@ -817,21 +826,31 @@ function App() {
         maxWidth="xs"
         fullWidth
       >
-        <DialogTitle>Add your phone number</DialogTitle>
+        <DialogTitle>Welcome! Set up your profile</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Share your phone number so other event members can reach you for
-            safety. You can always change this later in Account settings.
+            Tell us your name and phone number so other event members can
+            identify and reach you. You can always change these later in Account
+            settings.
           </Typography>
-          <TextField
-            autoFocus
-            label="Phone number"
-            type="tel"
-            fullWidth
-            placeholder="+1 (555) 123-4567"
-            value={phonePromptValue}
-            onChange={(e) => setPhonePromptValue(e.target.value)}
-          />
+          <Stack spacing={2}>
+            <TextField
+              autoFocus
+              label="Display name"
+              fullWidth
+              placeholder="e.g. Jonathan Gober"
+              value={namePromptValue}
+              onChange={(e) => setNamePromptValue(e.target.value)}
+            />
+            <TextField
+              label="Phone number"
+              type="tel"
+              fullWidth
+              placeholder="+1 (555) 123-4567"
+              value={phonePromptValue}
+              onChange={(e) => setPhonePromptValue(e.target.value)}
+            />
+          </Stack>
         </DialogContent>
         <DialogActions>
           <Button
@@ -844,9 +863,16 @@ function App() {
           </Button>
           <Button
             variant="contained"
-            disabled={!phonePromptValue.trim() || phonePromptSaving}
+            disabled={
+              (!namePromptValue.trim() && !phonePromptValue.trim()) ||
+              phonePromptSaving
+            }
             onClick={async () => {
               setPhonePromptSaving(true)
+              const body: { displayName?: string; phone?: string } = {}
+              if (namePromptValue.trim()) body.displayName = namePromptValue.trim()
+              if (phonePromptValue.trim()) body.phone = phonePromptValue.trim()
+
               try {
                 const res = await fetch(`${API_URL}/auth/me`, {
                   method: 'PATCH',
@@ -854,16 +880,18 @@ function App() {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${auth.token}`,
                   },
-                  body: JSON.stringify({ phone: phonePromptValue.trim() }),
+                  body: JSON.stringify(body),
                 })
                 if (res.ok && auth.userId) {
-                  localStorage.setItem(
-                    `authPhone_${auth.userId}`,
-                    phonePromptValue.trim(),
-                  )
+                  if (body.phone) {
+                    localStorage.setItem(`authPhone_${auth.userId}`, body.phone)
+                  }
+                  if (body.displayName) {
+                    localStorage.setItem(`authDisplayName_${auth.userId}`, body.displayName)
+                  }
                 }
               } catch {
-                // Silently fail — they can add it later in settings
+                // Silently fail — they can update later in settings
               }
               sessionStorage.setItem('phonePromptDismissed', '1')
               setPhonePromptSaving(false)
@@ -885,6 +913,11 @@ function App() {
             ? localStorage.getItem(`authPhone_${auth.userId}`) ?? ''
             : ''
         }
+        displayName={
+          auth?.userId
+            ? localStorage.getItem(`authDisplayName_${auth.userId}`) ?? ''
+            : ''
+        }
         onAuthUpdate={(next) => {
           setAuth((prev) =>
             prev
@@ -899,6 +932,10 @@ function App() {
           }
           if (next.phone !== undefined && auth?.userId) {
             localStorage.setItem(`authPhone_${auth.userId}`, next.phone)
+          }
+          if (next.displayName !== undefined && auth?.userId) {
+            localStorage.setItem(`authDisplayName_${auth.userId}`, next.displayName)
+            setDataVersion(v => v + 1)
           }
           if (next.avatarUrl && auth?.userId) {
             localStorage.setItem(`authAvatarUrl_${auth.userId}`, next.avatarUrl)

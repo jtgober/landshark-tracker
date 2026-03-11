@@ -124,8 +124,16 @@ export const joinEventForUser = async (req: AuthedRequest, res: Response) => {
     };
 
     if (memberResult.rows.length === 0) {
+      // Prefer display_name from users table, fall back to email-derived name
+      const userRow = await db.execute(
+        'SELECT display_name FROM users WHERE id = ?',
+        [req.user.id],
+      );
+      const displayName = userRow.rows[0]?.display_name as string | null;
+
       const emailLocal = req.user.email.split('@')[0];
       const prettyName =
+        displayName ||
         emailLocal
           .replace(/[._]/g, ' ')
           .split(' ')

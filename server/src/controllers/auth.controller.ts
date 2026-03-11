@@ -197,7 +197,7 @@ export const getMe = async (req: AuthedRequest, res: Response) => {
 
   try {
     const result = await db.execute(
-      'SELECT email, avatar_url, avatar_updated_at, phone FROM users WHERE id = ?',
+      'SELECT email, avatar_url, avatar_updated_at, phone, display_name FROM users WHERE id = ?',
       [req.user.id],
     )
     if (result.rows.length === 0) {
@@ -209,6 +209,7 @@ export const getMe = async (req: AuthedRequest, res: Response) => {
       avatarUrl: (row.avatar_url as string | null) ?? undefined,
       avatarUpdatedAt: (row.avatar_updated_at as string | null) ?? undefined,
       phone: (row.phone as string | null) ?? undefined,
+      displayName: (row.display_name as string | null) ?? undefined,
     })
   } catch {
     res.status(500).json({ message: 'Failed to fetch profile' })
@@ -220,16 +221,17 @@ export const updateMe = async (req: AuthedRequest, res: Response) => {
     return res.status(401).json({ message: 'Unauthorized' })
   }
 
-  const { email, password, phone } = req.body as {
+  const { email, password, phone, displayName } = req.body as {
     email?: string
     password?: string
     phone?: string
+    displayName?: string
   }
 
-  if (!email && !password && phone === undefined) {
+  if (!email && !password && phone === undefined && displayName === undefined) {
     return res
       .status(400)
-      .json({ message: 'Provide email, password, and/or phone to update' })
+      .json({ message: 'Provide a field to update' })
   }
 
   try {
@@ -259,6 +261,11 @@ export const updateMe = async (req: AuthedRequest, res: Response) => {
       args.push(phone)
     }
 
+    if (displayName !== undefined) {
+      fields.push('display_name = ?')
+      args.push(displayName)
+    }
+
     if (fields.length === 0) {
       return res.status(400).json({ message: 'No changes to save.' })
     }
@@ -270,9 +277,19 @@ export const updateMe = async (req: AuthedRequest, res: Response) => {
       args,
     )
 
+    // Sync display name to the members table so it shows in events
+    if (displayName !== undefined) {
+      const memberId = `user-${req.user.id}`
+      await db.execute(
+        'UPDATE members SET name = ? WHERE id = ?',
+        [displayName, memberId],
+      )
+    }
+
     res.json({
       email: email ?? req.user.email,
       phone: phone,
+      displayName: displayName,
     })
   } catch (error) {
     console.error('updateMe error', error)
