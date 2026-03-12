@@ -4,7 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { OpenInNew } from '@mui/icons-material'
-import { parseCoordsFromMapUrl } from '../utils/mapCoords'
+import { isShortMapUrl, parseCoordsFromMapUrl, resolveShortMapUrl } from '../utils/mapCoords'
 
 // Fix Leaflet default icon
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
@@ -37,9 +37,10 @@ export function EventLocationPreview({ location, locationUrl }: Props) {
   const [error, setError] = useState(false)
 
   useEffect(() => {
+    let cancelled = false
     if (!location?.trim() && !locationUrl?.trim()) {
       setLoading(false)
-      return
+      return () => { cancelled = true }
     }
     setLoading(true)
     setError(false)
@@ -48,15 +49,38 @@ export function EventLocationPreview({ location, locationUrl }: Props) {
     // Nominatim can return results biased by the user's IP, which would show "my location"
     // instead of the actual meeting place.
     if (locationUrl?.trim()) {
-      const fromUrl = parseCoordsFromMapUrl(locationUrl.trim())
+      const url = locationUrl.trim()
+      let fromUrl = parseCoordsFromMapUrl(url)
+      if (!fromUrl && isShortMapUrl(url)) {
+        resolveShortMapUrl(url)
+          .then((resolved) => parseCoordsFromMapUrl(resolved))
+          .then((parsed) => {
+            if (!cancelled) {
+              if (parsed) setCoords(parsed)
+              else {
+                setCoords(null)
+                setError(true)
+              }
+              setLoading(false)
+            }
+          })
+          .catch(() => {
+            if (!cancelled) {
+              setCoords(null)
+              setError(true)
+              setLoading(false)
+            }
+          })
+        return () => { cancelled = true }
+      }
       if (fromUrl) {
         setCoords(fromUrl)
       } else {
         setCoords(null)
-        setError(true) // Can't parse URL — show link only, no map
+        setError(true)
       }
       setLoading(false)
-      return
+      return () => { cancelled = true }
     }
 
     // No location_url: geocode the location text via Nominatim
@@ -73,19 +97,26 @@ export function EventLocationPreview({ location, locationUrl }: Props) {
     )
       .then((res) => res.json())
       .then((data: { lat: string; lon: string }[]) => {
-        if (data.length > 0) {
-          setCoords({ lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) })
-        } else {
+        if (!cancelled) {
+          if (data.length > 0) {
+            setCoords({ lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) })
+          } else {
+            setCoords(null)
+            setError(true)
+          }
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
           setCoords(null)
           setError(true)
         }
       })
-      .catch(() => {
-        setCoords(null)
-        setError(true)
-      })
-      .finally(() => setLoading(false))
-    return () => controller.abort()
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => {
+      cancelled = true
+      controller.abort()
+    }
   }, [location, locationUrl])
 
   if (!location?.trim() && !locationUrl?.trim()) return null

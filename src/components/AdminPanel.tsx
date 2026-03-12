@@ -54,6 +54,7 @@ type Event = {
   time: string
   location: string
   location_url?: string | null
+  course_map_url?: string | null
   type: string
   description: string
 }
@@ -110,8 +111,11 @@ export function AdminPanel({ auth, onBack }: Props) {
   }
 
   const handleDeleteEvent = async (id: string) => {
-    await fetch(`${API_URL}/events/${id}`, { method: 'DELETE', headers })
+    const res = await fetch(`${API_URL}/events/${id}`, { method: 'DELETE', headers })
     setDeleteDialog(null)
+    if (!res.ok) {
+      setError(res.status === 404 ? 'Event not found' : 'Failed to delete event')
+    }
     fetchEvents()
   }
 
@@ -208,11 +212,22 @@ export function AdminPanel({ auth, onBack }: Props) {
         onClose={() => setEditEvent(null)}
         onSave={async (data) => {
           if (!editEvent) return
-          await fetch(`${API_URL}/events/${editEvent.id}`, {
+          const body = {
+            name: data.name,
+            date: data.date,
+            time: data.time,
+            location: data.location,
+            locationUrl: data.locationUrl ?? null,
+            courseMapUrl: data.courseMapUrl ?? null,
+            type: data.type,
+            description: data.description,
+          }
+          const res = await fetch(`${API_URL}/events/${editEvent.id}`, {
             method: 'PATCH',
             headers,
-            body: JSON.stringify(data),
+            body: JSON.stringify(body),
           })
+          if (!res.ok) throw new Error('Failed to update event')
           setEditEvent(null)
           fetchEvents()
         }}
@@ -457,13 +472,14 @@ function EventFormDialog({
   open: boolean
   event: Event | null
   onClose: () => void
-  onSave: (data: Omit<Event, 'id'> & { locationUrl?: string }) => Promise<void>
+  onSave: (data: Omit<Event, 'id'> & { locationUrl?: string; courseMapUrl?: string }) => Promise<void>
 }) {
   const [name, setName] = useState('')
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
   const [location, setLocation] = useState('')
   const [locationUrl, setLocationUrl] = useState('')
+  const [courseMapUrl, setCourseMapUrl] = useState('')
   const [type, setType] = useState('cycling')
   const [description, setDescription] = useState('')
   const [saving, setSaving] = useState(false)
@@ -475,6 +491,7 @@ function EventFormDialog({
       setTime(event.time)
       setLocation(event.location)
       setLocationUrl(event.location_url ?? '')
+      setCourseMapUrl(event.course_map_url ?? '')
       setType(event.type)
       setDescription(event.description)
     } else {
@@ -491,7 +508,7 @@ function EventFormDialog({
   const handleSave = async () => {
     setSaving(true)
     try {
-      await onSave({ name, date, time, location, locationUrl: locationUrl.trim() || undefined, type, description })
+      await onSave({ name, date, time, location, locationUrl: locationUrl.trim() || undefined, courseMapUrl: courseMapUrl.trim() || undefined, type, description })
     } finally {
       setSaving(false)
     }
@@ -546,10 +563,18 @@ function EventFormDialog({
           <TextField
             label="Location link (optional)"
             fullWidth
-            placeholder="https://maps.google.com/... or maps.apple.com/..."
+            placeholder="https://maps.google.com/... or maps.app.goo.gl/..."
             value={locationUrl}
             onChange={(e) => setLocationUrl(e.target.value)}
-            helperText="Paste a Google Maps or Apple Maps link for directions"
+            helperText="Paste a Google Maps link or mobile share link (maps.app.goo.gl) for directions"
+          />
+          <TextField
+            label="Course map (optional)"
+            fullWidth
+            placeholder="e.g. https://ridewithgps.com/routes/54151690"
+            value={courseMapUrl}
+            onChange={(e) => setCourseMapUrl(e.target.value)}
+            helperText="Link to route map (RideWithGPS, Strava, etc.) for participants"
           />
           <TextField
             label="Description"

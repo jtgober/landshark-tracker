@@ -56,12 +56,22 @@ export function CreateEventDialog(props: {
           <TextField
             label="Location link (optional)"
             fullWidth
-            placeholder="https://maps.google.com/... or maps.apple.com/..."
+            placeholder="https://maps.google.com/... or maps.app.goo.gl/..."
             value={draft.location_url ?? ''}
             onChange={(e) =>
               onChange({ ...draft, location_url: e.target.value.trim() || undefined })
             }
-            helperText="Paste a Google Maps or Apple Maps link so others can open directions"
+            helperText="Paste a Google Maps link or mobile share link (maps.app.goo.gl) for directions"
+          />
+          <TextField
+            label="Course map (optional)"
+            fullWidth
+            placeholder="e.g. https://ridewithgps.com/routes/54151690"
+            value={draft.course_map_url ?? ''}
+            onChange={(e) =>
+              onChange({ ...draft, course_map_url: e.target.value.trim() || undefined })
+            }
+            helperText="Link to route map (RideWithGPS, Strava, etc.) for participants"
           />
           <TextField
             select

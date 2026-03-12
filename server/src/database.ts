@@ -140,6 +140,12 @@ export const initDb = async () => {
     if (locationUrlInfo.rows.length === 0) {
       await db.execute('ALTER TABLE events ADD COLUMN location_url TEXT');
     }
+    const courseMapUrlInfo = await db.execute(
+      "SELECT name FROM pragma_table_info('events') WHERE name = 'course_map_url'",
+    );
+    if (courseMapUrlInfo.rows.length === 0) {
+      await db.execute('ALTER TABLE events ADD COLUMN course_map_url TEXT');
+    }
   } catch {
     // If this fails, we just skip; app will fall back to default avatar
   }

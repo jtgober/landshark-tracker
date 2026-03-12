@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import {
   Avatar,
+  Box,
   Button,
   Chip,
   Dialog,
@@ -8,14 +9,14 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
+  Link,
   List,
   ListItem,
   ListItemAvatar,
   ListItemText,
   Stack,
-  Typography,
-  Box,
   Tooltip,
+  Typography,
 } from '@mui/material'
 import {
   CheckCircle,
@@ -23,9 +24,10 @@ import {
   Logout,
   DeleteOutline,
   Edit as EditIcon,
+  Map as MapIcon,
+  OpenInNew,
   Phone,
   Sms,
-  Map as MapIcon,
 } from '@mui/icons-material'
 import type { ClubEvent, Member } from '../types'
 import { API_BASE } from '../config'
@@ -141,6 +143,22 @@ export function EventAttendanceDialog(props: {
                 location={event.location}
                 locationUrl={(event as { location_url?: string }).location_url ?? (event as { locationUrl?: string }).locationUrl}
               />
+            )}
+            {(event as { course_map_url?: string | null }).course_map_url && (
+              <Box sx={{ mt: 1 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: 13, mb: 0.5 }}>
+                  Course map
+                </Typography>
+                <Link
+                  href={(event as { course_map_url?: string }).course_map_url!}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={{ display: 'flex', alignItems: 'center', gap: 0.25, fontSize: 13 }}
+                >
+                  <OpenInNew sx={{ fontSize: 14 }} />
+                  View route map
+                </Link>
+              </Box>
             )}
             {currentUserStatus && (
               <Box

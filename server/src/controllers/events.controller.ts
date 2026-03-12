@@ -27,7 +27,7 @@ export const getEventById = async (req: Request, res: Response) => {
 };
 
 export const createEvent = async (req: Request, res: Response) => {
-  const { name, date, time, location, locationUrl, type, description } = req.body;
+  const { name, date, time, location, locationUrl, courseMapUrl, type, description } = req.body;
   
   if (!name) {
     return res.status(400).json({ message: 'Event name is required' });
@@ -39,22 +39,24 @@ export const createEvent = async (req: Request, res: Response) => {
     date: date || '',
     time: time || '',
     location: location || '',
-    locationUrl: locationUrl || null,
+    location_url: locationUrl || null,
+    course_map_url: courseMapUrl || null,
     type: type || 'cycling',
     description: description || '',
   };
 
   try {
     await db.execute(
-      `INSERT INTO events (id, name, date, time, location, location_url, type, description)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO events (id, name, date, time, location, location_url, course_map_url, type, description)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         newEvent.id,
         newEvent.name,
         newEvent.date,
         newEvent.time,
         newEvent.location,
-        newEvent.locationUrl,
+        newEvent.location_url,
+        newEvent.course_map_url,
         newEvent.type,
         newEvent.description,
       ],
@@ -250,24 +252,36 @@ export const updateEvent = async (req: AuthedRequest, res: Response) => {
   }
 
   const eventId = param(req.params.id);
-  const { name, date, time, location, locationUrl, type, description } = req.body as {
+  const body = req.body as {
     name?: string
     date?: string
     time?: string
     location?: string
     locationUrl?: string | null
+    courseMapUrl?: string | null
+    course_map_url?: string | null
     type?: string
     description?: string
   };
+  const { name, date, time, location, locationUrl, type, description } = body;
+  const courseMapUrl = body.courseMapUrl ?? body.course_map_url;
 
   try {
-    const existing = await db.execute(
-      'SELECT id FROM events WHERE id = ?',
-      [eventId],
-    );
+    const existing = await db.execute({
+      sql: 'SELECT id FROM events WHERE id = ?',
+      args: [eventId],
+    });
 
     if (existing.rows.length === 0) {
       return res.status(404).json({ message: 'Event not found' });
+    }
+
+    // Ensure course_map_url column exists (migration may have been skipped)
+    const colCheck = await db.execute({
+      sql: "SELECT name FROM pragma_table_info('events') WHERE name = 'course_map_url'",
+    });
+    if (colCheck.rows.length === 0) {
+      await db.execute({ sql: 'ALTER TABLE events ADD COLUMN course_map_url TEXT' });
     }
 
     const fields: string[] = [];
@@ -278,6 +292,7 @@ export const updateEvent = async (req: AuthedRequest, res: Response) => {
     if (time !== undefined) { fields.push('time = ?'); args.push(time); }
     if (location !== undefined) { fields.push('location = ?'); args.push(location); }
     if (locationUrl !== undefined) { fields.push('location_url = ?'); args.push(locationUrl ?? null); }
+    if (courseMapUrl !== undefined) { fields.push('course_map_url = ?'); args.push(courseMapUrl ?? null); }
     if (type !== undefined) { fields.push('type = ?'); args.push(type); }
     if (description !== undefined) { fields.push('description = ?'); args.push(description); }
 
@@ -286,12 +301,25 @@ export const updateEvent = async (req: AuthedRequest, res: Response) => {
     }
 
     args.push(eventId);
-    await db.execute(
-      `UPDATE events SET ${fields.join(', ')} WHERE id = ?`,
-      args,
-    );
 
-    const updated = await db.execute('SELECT * FROM events WHERE id = ?', [eventId]);
+    await db.execute({
+      sql: `UPDATE events SET ${fields.join(', ')} WHERE id = ?`,
+      args,
+    });
+
+    // If course_map_url was in the batch, it should be updated. If not, run a dedicated update
+    // (handles edge cases where it might be omitted from the dynamic build)
+    if (courseMapUrl !== undefined) {
+      await db.execute({
+        sql: 'UPDATE events SET course_map_url = ? WHERE id = ?',
+        args: [courseMapUrl ?? null, eventId],
+      });
+    }
+
+    const updated = await db.execute({
+      sql: 'SELECT * FROM events WHERE id = ?',
+      args: [eventId],
+    });
     res.json(updated.rows[0]);
   } catch {
     res.status(500).json({ error: 'Failed to update event' });
@@ -306,24 +334,21 @@ export const deleteEvent = async (req: AuthedRequest, res: Response) => {
   const eventId = param(req.params.id);
 
   try {
-    const existing = await db.execute(
-      'SELECT id FROM events WHERE id = ?',
-      [eventId],
-    );
-
+    const existing = await db.execute('SELECT id FROM events WHERE id = ?', [eventId]);
     if (existing.rows.length === 0) {
       return res.status(404).json({ message: 'Event not found' });
     }
 
-    await db.executeMultiple(`
-      DELETE FROM user_attendance WHERE event_id = '${eventId}';
-      DELETE FROM attendance WHERE event_id = '${eventId}';
-      DELETE FROM events WHERE id = '${eventId}';
-    `);
+    await db.execute('DELETE FROM event_messages WHERE event_id = ?', [eventId]);
+    await db.execute('DELETE FROM user_attendance WHERE event_id = ?', [eventId]);
+    await db.execute('DELETE FROM attendance WHERE event_id = ?', [eventId]);
+    await db.execute('DELETE FROM events WHERE id = ?', [eventId]);
 
     res.status(204).send();
-  } catch {
-    res.status(500).json({ error: 'Failed to delete event' });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('deleteEvent error:', err);
+    res.status(500).json({ error: 'Failed to delete event', message: msg });
   }
 };
 

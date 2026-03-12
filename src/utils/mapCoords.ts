@@ -1,3 +1,27 @@
+import { API_URL } from '../config'
+
+const SHORT_MAP_DOMAINS = ['maps.app.goo.gl', 'goo.gl']
+
+export function isShortMapUrl(url: string): boolean {
+  try {
+    const host = new URL(url).hostname.toLowerCase()
+    return SHORT_MAP_DOMAINS.some((d) => host === d || host.endsWith('.' + d))
+  } catch {
+    return false
+  }
+}
+
+/** Resolve short map URLs (e.g. maps.app.goo.gl/xxx) to full URL with coordinates */
+export async function resolveShortMapUrl(url: string): Promise<string> {
+  if (!isShortMapUrl(url)) return url
+  const res = await fetch(
+    `${API_URL}/maps/resolve?url=${encodeURIComponent(url)}`,
+  )
+  if (!res.ok) throw new Error('Failed to resolve map link')
+  const data = (await res.json()) as { url?: string }
+  return data.url ?? url
+}
+
 function parsePair(match: RegExpMatchArray | null): { lat: number; lng: number } | null {
   if (!match) return null
   const lat = parseFloat(match[1])

@@ -108,32 +108,31 @@ export function EventsListCard(props: {
                   {evt.date} · {evt.time}
                 </Typography>
               )}
-              {evt.location && (
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ fontSize: 13 }}
-                >
-                  {((evt as { location_url?: string }).location_url ?? (evt as { locationUrl?: string }).locationUrl) ? (
-                    <Box
-                      component="a"
-                      href={(evt as { location_url?: string }).location_url ?? (evt as { locationUrl?: string }).locationUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      sx={{ color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
-                    >
-                      {evt.location}
-                    </Box>
-                  ) : (
-                    evt.location
-                  )}
-                </Typography>
-              )}
-              {evt.description && (
-                <Typography variant="body2" sx={{ mt: 0.25, fontSize: 13.5 }}>
-                  {evt.description}
-                </Typography>
-              )}
+              {(() => {
+                const loc = (evt.location ?? '').replace(/\s*https?:\/\/[^\s]+/gi, '').trim()
+                return loc ? (
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontSize: 13 }}
+                  >
+                    {loc}
+                  </Typography>
+                ) : null
+              })()}
+              {(() => {
+                const desc = (evt.description ?? '')
+                  .split('\n')
+                  .filter(line => !/https?:\/\//i.test(line))
+                  .map(line => line.replace(/\s*https?:\/\/[^\s]+/gi, '').trim())
+                  .filter(Boolean)
+                  .join('\n')
+                return desc ? (
+                  <Typography variant="body2" sx={{ mt: 0.25, fontSize: 13.5 }}>
+                    {desc}
+                  </Typography>
+                ) : null
+              })()}
             </Box>
             <Stack alignItems="center" spacing={0.5} sx={{ flexShrink: 0, width: 80 }}>
               <Chip

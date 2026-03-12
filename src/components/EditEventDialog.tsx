@@ -24,6 +24,7 @@ export function EditEventDialog(props: {
   const [time, setTime] = useState('')
   const [location, setLocation] = useState('')
   const [locationUrl, setLocationUrl] = useState('')
+  const [courseMapUrl, setCourseMapUrl] = useState('')
   const [type, setType] = useState<ClubEvent['type']>('cycling')
   const [description, setDescription] = useState('')
   const [saving, setSaving] = useState(false)
@@ -36,6 +37,7 @@ export function EditEventDialog(props: {
       setTime(event.time)
       setLocation(event.location)
       setLocationUrl(event.location_url ?? '')
+      setCourseMapUrl(event.course_map_url ?? '')
       setType(event.type)
       setDescription(event.description)
     }
@@ -52,6 +54,7 @@ export function EditEventDialog(props: {
         time,
         location,
         location_url: locationUrl.trim() || undefined,
+        course_map_url: courseMapUrl.trim() || undefined,
         type,
         description,
       })
@@ -107,10 +110,18 @@ export function EditEventDialog(props: {
           <TextField
             label="Location link (optional)"
             fullWidth
-            placeholder="https://maps.google.com/... or maps.apple.com/..."
+            placeholder="https://maps.google.com/... or maps.app.goo.gl/..."
             value={locationUrl}
             onChange={(e) => setLocationUrl(e.target.value)}
-            helperText="Paste a Google Maps or Apple Maps link for directions"
+            helperText="Paste a Google Maps link or mobile share link (maps.app.goo.gl) for directions"
+          />
+          <TextField
+            label="Course map (optional)"
+            fullWidth
+            placeholder="e.g. https://ridewithgps.com/routes/54151690"
+            value={courseMapUrl}
+            onChange={(e) => setCourseMapUrl(e.target.value)}
+            helperText="Link to route map (RideWithGPS, Strava, etc.) for participants"
           />
           <TextField
             select

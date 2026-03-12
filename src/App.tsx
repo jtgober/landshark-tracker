@@ -326,6 +326,8 @@ function AppContent({ themeMode, onToggleTheme }: { themeMode: ThemeMode; onTogg
     date: '',
     time: '',
     location: '',
+    location_url: undefined,
+    course_map_url: undefined,
     type: 'cycling',
     description: '',
   })
@@ -397,6 +399,7 @@ function AppContent({ themeMode, onToggleTheme }: { themeMode: ThemeMode; onTogg
           ...newEventDraft,
           name: trimmedName,
           locationUrl: newEventDraft.location_url || undefined,
+          courseMapUrl: newEventDraft.course_map_url || undefined,
         }),
       })
 
@@ -419,6 +422,7 @@ function AppContent({ themeMode, onToggleTheme }: { themeMode: ThemeMode; onTogg
         time: '',
         location: '',
         location_url: undefined,
+        course_map_url: undefined,
         type: 'cycling',
         description: '',
       })
@@ -515,7 +519,10 @@ function AppContent({ themeMode, onToggleTheme }: { themeMode: ThemeMode; onTogg
         },
       })
 
-      if (!res.ok && res.status !== 204) return
+      if (!res.ok && res.status !== 204) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data?.message ?? data?.error ?? 'Failed to delete event')
+      }
 
       setEvents(prev => prev.filter(evt => evt.id !== activeEvent.id))
       setAttendance(prev => {
@@ -560,6 +567,7 @@ function AppContent({ themeMode, onToggleTheme }: { themeMode: ThemeMode; onTogg
           time: data.time,
           location: data.location,
           locationUrl: data.location_url ?? null,
+          courseMapUrl: data.course_map_url ?? null,
           type: data.type,
           description: data.description,
         }),

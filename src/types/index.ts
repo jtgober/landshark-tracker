@@ -27,6 +27,8 @@ export type ClubEvent = {
   location: string
   /** Optional link to starting location (Google Maps, Apple Maps, etc.) */
   location_url?: string | null
+  /** Optional link to course/route map (RideWithGPS, Strava, etc.) */
+  course_map_url?: string | null
   type: 'cycling' | 'swimming' | 'running'
   description: string
 }
