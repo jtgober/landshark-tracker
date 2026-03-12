@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { usePageVisibility } from '../hooks/usePageVisibility'
 import {
   Avatar,
   Box,
@@ -36,6 +37,7 @@ export function EventChat({ eventId, token, currentUserId }: Props) {
   const [loading, setLoading] = useState(true)
   const bottomRef = useRef<HTMLDivElement | null>(null)
   const pollRef = useRef<ReturnType<typeof setInterval>>(undefined)
+  const isVisible = usePageVisibility()
 
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
 
@@ -55,9 +57,21 @@ export function EventChat({ eventId, token, currentUserId }: Props) {
 
   useEffect(() => {
     fetchMessages()
-    pollRef.current = setInterval(fetchMessages, 10_000)
-    return () => clearInterval(pollRef.current)
-  }, [fetchMessages])
+    if (!isVisible) {
+      if (pollRef.current) {
+        clearInterval(pollRef.current)
+        pollRef.current = undefined
+      }
+      return
+    }
+    pollRef.current = setInterval(fetchMessages, 30_000)
+    return () => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current)
+        pollRef.current = undefined
+      }
+    }
+  }, [fetchMessages, isVisible])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })

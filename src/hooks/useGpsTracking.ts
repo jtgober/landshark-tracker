@@ -45,7 +45,7 @@ export function useGpsTracking(token: string | null) {
       if (lastCoordsRef.current) {
         sendLocation(lastCoordsRef.current.lat, lastCoordsRef.current.lng)
       }
-    }, 30_000)
+    }, 60_000)
   }, [sendLocation])
 
   const stop = useCallback(() => {

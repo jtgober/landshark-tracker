@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
+import { usePageVisibility } from '../hooks/usePageVisibility'
 import { Box, Alert, CircularProgress } from '@mui/material'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
@@ -79,6 +80,7 @@ export function EventLocationMap({
   const [locations, setLocations] = useState<MemberLocation[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const isTabVisible = usePageVisibility()
 
   useEffect(() => {
     if (!visible || !eventId) return
@@ -104,13 +106,14 @@ export function EventLocationMap({
     }
 
     fetchLocations()
-    const interval = setInterval(fetchLocations, 15_000)
+    if (!isTabVisible) return
+    const interval = setInterval(fetchLocations, 30_000)
 
     return () => {
       cancelled = true
       clearInterval(interval)
     }
-  }, [eventId, visible])
+  }, [eventId, visible, isTabVisible])
 
   if (!visible) return null
 

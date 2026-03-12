@@ -19,9 +19,19 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+app.set('etag', false);
+
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Disable caching for API — prevents 304 conditional requests and browser cache
+app.use('/api', (_req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  next();
+});
 
 // Swagger docs — available at /api-docs
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {

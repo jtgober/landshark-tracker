@@ -240,7 +240,7 @@ function AppContent({ themeMode, onToggleTheme }: { themeMode: ThemeMode; onTogg
           if (profile.displayName !== undefined) {
             localStorage.setItem(`authDisplayName_${auth.userId}`, profile.displayName ?? '')
           }
-          if (profile.role) {
+          if (profile.role && profile.role !== auth.role) {
             localStorage.setItem('authRole', profile.role)
             setAuth((prev) => prev ? { ...prev, role: profile.role! } : prev)
           }
