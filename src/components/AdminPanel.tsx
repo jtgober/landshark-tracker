@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   Box,
   Typography,
@@ -77,7 +77,10 @@ export function AdminPanel({ auth, onBack }: Props) {
   const [editEvent, setEditEvent] = useState<Event | null>(null)
   const [createEventOpen, setCreateEventOpen] = useState(false)
 
-  const headers = { Authorization: `Bearer ${auth.token}`, 'Content-Type': 'application/json' }
+  const headers = useMemo(
+    () => ({ Authorization: `Bearer ${auth.token}`, 'Content-Type': 'application/json' }),
+    [auth.token],
+  )
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -87,7 +90,7 @@ export function AdminPanel({ auth, onBack }: Props) {
     } catch (e) {
       setError((e as Error).message)
     }
-  }, [auth.token])
+  }, [headers])
 
   const fetchEvents = useCallback(async () => {
     try {

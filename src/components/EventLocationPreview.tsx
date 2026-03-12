@@ -39,18 +39,20 @@ export function EventLocationPreview({ location, locationUrl }: Props) {
   useEffect(() => {
     let cancelled = false
     if (!location?.trim() && !locationUrl?.trim()) {
-      setLoading(false)
+      queueMicrotask(() => setLoading(false))
       return () => { cancelled = true }
     }
-    setLoading(true)
-    setError(false)
+    queueMicrotask(() => {
+      setLoading(true)
+      setError(false)
+    })
 
     // When we have a location_url, use ONLY the URL for coordinates — never geocode.
     // Nominatim can return results biased by the user's IP, which would show "my location"
     // instead of the actual meeting place.
     if (locationUrl?.trim()) {
       const url = locationUrl.trim()
-      let fromUrl = parseCoordsFromMapUrl(url)
+      const fromUrl = parseCoordsFromMapUrl(url)
       if (!fromUrl && isShortMapUrl(url)) {
         resolveShortMapUrl(url)
           .then((resolved) => parseCoordsFromMapUrl(resolved))
@@ -73,13 +75,17 @@ export function EventLocationPreview({ location, locationUrl }: Props) {
           })
         return () => { cancelled = true }
       }
-      if (fromUrl) {
-        setCoords(fromUrl)
-      } else {
-        setCoords(null)
-        setError(true)
-      }
-      setLoading(false)
+      queueMicrotask(() => {
+        if (!cancelled) {
+          if (fromUrl) {
+            setCoords(fromUrl)
+          } else {
+            setCoords(null)
+            setError(true)
+          }
+          setLoading(false)
+        }
+      })
       return () => { cancelled = true }
     }
 

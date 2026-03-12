@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { usePageVisibility } from '../hooks/usePageVisibility'
 import {
   Avatar,
@@ -39,7 +39,10 @@ export function EventChat({ eventId, token, currentUserId }: Props) {
   const pollRef = useRef<ReturnType<typeof setInterval>>(undefined)
   const isVisible = usePageVisibility()
 
-  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+  const headers = useMemo(
+    () => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }),
+    [token],
+  )
 
   const fetchMessages = useCallback(async () => {
     try {
@@ -53,7 +56,7 @@ export function EventChat({ eventId, token, currentUserId }: Props) {
     } finally {
       setLoading(false)
     }
-  }, [eventId, token])
+  }, [eventId, headers])
 
   useEffect(() => {
     fetchMessages()
