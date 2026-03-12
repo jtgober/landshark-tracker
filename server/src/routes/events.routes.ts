@@ -10,7 +10,7 @@ import {
   leaveEventForUser,
   deleteEvent,
 } from '../controllers/events.controller';
-import { requireAuth, requireAdmin } from '../middleware/auth.middleware';
+import { requireAuth } from '../middleware/auth.middleware';
 
 const router = Router();
 
@@ -107,7 +107,7 @@ router.get('/:id', getEventById);
  *             schema:
  *               $ref: '#/components/schemas/Event'
  */
-router.post('/', requireAuth, requireAdmin, createEvent);
+router.post('/', requireAuth, createEvent);
 
 /**
  * @openapi
@@ -212,8 +212,8 @@ router.post('/:id/leave', requireAuth, leaveEventForUser);
  *       200:
  *         description: Updated event
  */
-router.patch('/:id', requireAuth, requireAdmin, updateEvent);
+router.patch('/:id', requireAuth, updateEvent);
 
-router.delete('/:id', requireAuth, requireAdmin, deleteEvent);
+router.delete('/:id', requireAuth, deleteEvent);
 
 export default router;

@@ -53,6 +53,7 @@ type Event = {
   date: string
   time: string
   location: string
+  location_url?: string | null
   type: string
   description: string
 }
@@ -456,12 +457,13 @@ function EventFormDialog({
   open: boolean
   event: Event | null
   onClose: () => void
-  onSave: (data: Omit<Event, 'id'>) => Promise<void>
+  onSave: (data: Omit<Event, 'id'> & { locationUrl?: string }) => Promise<void>
 }) {
   const [name, setName] = useState('')
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
   const [location, setLocation] = useState('')
+  const [locationUrl, setLocationUrl] = useState('')
   const [type, setType] = useState('cycling')
   const [description, setDescription] = useState('')
   const [saving, setSaving] = useState(false)
@@ -472,6 +474,7 @@ function EventFormDialog({
       setDate(event.date)
       setTime(event.time)
       setLocation(event.location)
+      setLocationUrl(event.location_url ?? '')
       setType(event.type)
       setDescription(event.description)
     } else {
@@ -479,6 +482,7 @@ function EventFormDialog({
       setDate('')
       setTime('')
       setLocation('')
+      setLocationUrl('')
       setType('cycling')
       setDescription('')
     }
@@ -487,7 +491,7 @@ function EventFormDialog({
   const handleSave = async () => {
     setSaving(true)
     try {
-      await onSave({ name, date, time, location, type, description })
+      await onSave({ name, date, time, location, locationUrl: locationUrl.trim() || undefined, type, description })
     } finally {
       setSaving(false)
     }
@@ -538,6 +542,14 @@ function EventFormDialog({
             placeholder="e.g. Harbor Lot B"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
+          />
+          <TextField
+            label="Location link (optional)"
+            fullWidth
+            placeholder="https://maps.google.com/... or maps.apple.com/..."
+            value={locationUrl}
+            onChange={(e) => setLocationUrl(e.target.value)}
+            helperText="Paste a Google Maps or Apple Maps link for directions"
           />
           <TextField
             label="Description"

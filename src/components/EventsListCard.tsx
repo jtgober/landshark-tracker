@@ -114,7 +114,19 @@ export function EventsListCard(props: {
                   color="text.secondary"
                   sx={{ fontSize: 13 }}
                 >
-                  {evt.location}
+                  {((evt as { location_url?: string }).location_url ?? (evt as { locationUrl?: string }).locationUrl) ? (
+                    <Box
+                      component="a"
+                      href={(evt as { location_url?: string }).location_url ?? (evt as { locationUrl?: string }).locationUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      sx={{ color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+                    >
+                      {evt.location}
+                    </Box>
+                  ) : (
+                    evt.location
+                  )}
                 </Typography>
               )}
               {evt.description && (

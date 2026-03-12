@@ -49,8 +49,19 @@ export function CreateEventDialog(props: {
           <TextField
             label="Location"
             fullWidth
+            placeholder="e.g. Harbor Lot B"
             value={draft.location}
             onChange={(e) => onChange({ ...draft, location: e.target.value })}
+          />
+          <TextField
+            label="Location link (optional)"
+            fullWidth
+            placeholder="https://maps.google.com/... or maps.apple.com/..."
+            value={draft.location_url ?? ''}
+            onChange={(e) =>
+              onChange({ ...draft, location_url: e.target.value.trim() || undefined })
+            }
+            helperText="Paste a Google Maps or Apple Maps link so others can open directions"
           />
           <TextField
             select

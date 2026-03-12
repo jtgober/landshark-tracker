@@ -134,6 +134,12 @@ export const initDb = async () => {
     if (roleInfo.rows.length === 0) {
       await db.execute("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'member'");
     }
+    const locationUrlInfo = await db.execute(
+      "SELECT name FROM pragma_table_info('events') WHERE name = 'location_url'",
+    );
+    if (locationUrlInfo.rows.length === 0) {
+      await db.execute('ALTER TABLE events ADD COLUMN location_url TEXT');
+    }
   } catch {
     // If this fails, we just skip; app will fall back to default avatar
   }

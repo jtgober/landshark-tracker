@@ -25,6 +25,8 @@ export type ClubEvent = {
   date: string
   time: string
   location: string
+  /** Optional link to starting location (Google Maps, Apple Maps, etc.) */
+  location_url?: string | null
   type: 'cycling' | 'swimming' | 'running'
   description: string
 }

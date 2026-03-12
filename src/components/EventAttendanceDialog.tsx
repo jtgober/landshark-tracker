@@ -22,6 +22,7 @@ import {
   Login,
   Logout,
   DeleteOutline,
+  Edit as EditIcon,
   Phone,
   Sms,
   Map as MapIcon,
@@ -30,6 +31,7 @@ import type { ClubEvent, Member } from '../types'
 import { API_BASE } from '../config'
 import { EventAttendanceSummary } from './EventAttendanceSummary'
 import { EventLocationMap } from './EventLocationMap'
+import { EventLocationPreview } from './EventLocationPreview'
 import { EventChat } from './EventChat'
 
 function ToggleActionButton({
@@ -88,6 +90,7 @@ export function EventAttendanceDialog(props: {
   currentUserMemberId?: string
   currentUserAvatarUrl?: string
   onDeleteEvent?: () => void
+  onEditEvent?: () => void
   authToken?: string
   currentUserId?: string
 }) {
@@ -104,6 +107,7 @@ export function EventAttendanceDialog(props: {
     currentUserMemberId,
     currentUserAvatarUrl,
     onDeleteEvent,
+    onEditEvent,
     authToken,
     currentUserId,
   } = props
@@ -115,7 +119,6 @@ export function EventAttendanceDialog(props: {
     members.some(
       (m) => attendance[event.id]?.[m.id] === 'in',
     )
-
   return (
     <Dialog
       open={Boolean(event)}
@@ -133,6 +136,12 @@ export function EventAttendanceDialog(props: {
               members={members}
               attendance={attendance[event.id] ?? {}}
             />
+            {(event.location || (event as { location_url?: string }).location_url) && (
+              <EventLocationPreview
+                location={event.location}
+                locationUrl={(event as { location_url?: string }).location_url ?? (event as { locationUrl?: string }).locationUrl}
+              />
+            )}
             {currentUserStatus && (
               <Box
                 sx={{
@@ -247,6 +256,7 @@ export function EventAttendanceDialog(props: {
                     </ListItemAvatar>
                     <ListItemText
                       sx={{ pr: 2 }}
+                      secondaryTypographyProps={{ component: 'div' }}
                       primary={
                         <Typography
                           variant="subtitle1"
@@ -324,7 +334,11 @@ export function EventAttendanceDialog(props: {
             )}
 
             {event && (
-              <EventLocationMap eventId={event.id} visible={showMap} />
+              <EventLocationMap
+                eventId={event.id}
+                visible={showMap}
+                currentUserId={currentUserId}
+              />
             )}
 
             {/* Chat */}
@@ -356,6 +370,17 @@ export function EventAttendanceDialog(props: {
         }}
       >
         <Box>
+          {onEditEvent && (
+            <IconButton
+              size="small"
+              color="primary"
+              onClick={onEditEvent}
+              sx={{ mr: 1 }}
+              aria-label="Edit event"
+            >
+              <EditIcon />
+            </IconButton>
+          )}
           {onDeleteEvent && (
             <IconButton
               size="small"

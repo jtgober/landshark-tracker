@@ -27,7 +27,7 @@ export const getEventById = async (req: Request, res: Response) => {
 };
 
 export const createEvent = async (req: Request, res: Response) => {
-  const { name, date, time, location, type, description } = req.body;
+  const { name, date, time, location, locationUrl, type, description } = req.body;
   
   if (!name) {
     return res.status(400).json({ message: 'Event name is required' });
@@ -39,21 +39,22 @@ export const createEvent = async (req: Request, res: Response) => {
     date: date || '',
     time: time || '',
     location: location || '',
+    locationUrl: locationUrl || null,
     type: type || 'cycling',
     description: description || '',
   };
 
   try {
-    // Insert the new event
     await db.execute(
-      `INSERT INTO events (id, name, date, time, location, type, description)
-            VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO events (id, name, date, time, location, location_url, type, description)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         newEvent.id,
         newEvent.name,
         newEvent.date,
         newEvent.time,
         newEvent.location,
+        newEvent.locationUrl,
         newEvent.type,
         newEvent.description,
       ],
@@ -249,11 +250,12 @@ export const updateEvent = async (req: AuthedRequest, res: Response) => {
   }
 
   const eventId = param(req.params.id);
-  const { name, date, time, location, type, description } = req.body as {
+  const { name, date, time, location, locationUrl, type, description } = req.body as {
     name?: string
     date?: string
     time?: string
     location?: string
+    locationUrl?: string | null
     type?: string
     description?: string
   };
@@ -269,12 +271,13 @@ export const updateEvent = async (req: AuthedRequest, res: Response) => {
     }
 
     const fields: string[] = [];
-    const args: string[] = [];
+    const args: (string | null)[] = [];
 
     if (name !== undefined) { fields.push('name = ?'); args.push(name); }
     if (date !== undefined) { fields.push('date = ?'); args.push(date); }
     if (time !== undefined) { fields.push('time = ?'); args.push(time); }
     if (location !== undefined) { fields.push('location = ?'); args.push(location); }
+    if (locationUrl !== undefined) { fields.push('location_url = ?'); args.push(locationUrl ?? null); }
     if (type !== undefined) { fields.push('type = ?'); args.push(type); }
     if (description !== undefined) { fields.push('description = ?'); args.push(description); }
 

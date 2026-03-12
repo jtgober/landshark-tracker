@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { usePageVisibility } from '../hooks/usePageVisibility'
-import { Box, Alert, CircularProgress } from '@mui/material'
+import { Box, Alert, CircularProgress, Typography } from '@mui/material'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -42,19 +42,26 @@ function createColorIcon(color: string) {
   })
 }
 
-function FitBounds({ locations }: { locations: MemberLocation[] }) {
+function MapView({
+  memberLocations,
+  currentUserLocation,
+}: {
+  memberLocations: MemberLocation[]
+  currentUserLocation: { lat: number; lng: number } | null
+}) {
   const map = useMap()
-  const fitted = useRef(false)
+  const fittedRef = useRef(false)
 
   useEffect(() => {
-    if (locations.length > 0 && !fitted.current) {
-      const bounds = L.latLngBounds(
-        locations.map((l) => [l.lat, l.lng] as [number, number]),
-      )
-      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 })
-      fitted.current = true
+    if (currentUserLocation) {
+      map.setView([currentUserLocation.lat, currentUserLocation.lng], 15)
+      fittedRef.current = true
+    } else if (memberLocations.length > 0 && !fittedRef.current) {
+      const points = memberLocations.map((l) => [l.lat, l.lng] as [number, number])
+      map.fitBounds(L.latLngBounds(points), { padding: [40, 40], maxZoom: 15 })
+      fittedRef.current = true
     }
-  }, [locations, map])
+  }, [memberLocations, currentUserLocation, map])
 
   return null
 }
@@ -73,14 +80,20 @@ function timeSince(dateStr: string) {
 export function EventLocationMap({
   eventId,
   visible,
+  currentUserId,
 }: {
   eventId: string
   visible: boolean
+  currentUserId?: string
 }) {
   const [locations, setLocations] = useState<MemberLocation[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const isTabVisible = usePageVisibility()
+
+  const currentUserLocation = currentUserId
+    ? locations.find((l) => l.userId === currentUserId)
+    : null
 
   useEffect(() => {
     if (!visible || !eventId) return
@@ -107,7 +120,7 @@ export function EventLocationMap({
 
     fetchLocations()
     if (!isTabVisible) return
-    const interval = setInterval(fetchLocations, 30_000)
+    const interval = setInterval(fetchLocations, 10_000) // Poll every 10s for live tracking
 
     return () => {
       cancelled = true
@@ -141,24 +154,40 @@ export function EventLocationMap({
     )
   }
 
+  const center: [number, number] = currentUserLocation
+    ? [currentUserLocation.lat, currentUserLocation.lng]
+    : locations[0]
+      ? [locations[0].lat, locations[0].lng]
+      : [0, 0]
+
   return (
-    <Box
-      sx={{
-        height: 280,
-        borderRadius: 2,
-        overflow: 'hidden',
-        border: '1px solid',
-        borderColor: 'divider',
-      }}
-    >
+    <Box sx={{ mt: 1 }}>
+      <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: 13, mb: 0.5, color: 'text.secondary' }}>
+        Live member locations
+      </Typography>
+      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+        Colored dots show where checked-in members are.
+      </Typography>
+      <Box
+        sx={{
+          height: 280,
+          borderRadius: 2,
+          overflow: 'hidden',
+          border: '1px solid',
+          borderColor: 'divider',
+        }}
+      >
       <MapContainer
-        center={[locations[0].lat, locations[0].lng]}
+        center={center}
         zoom={13}
         style={{ height: '100%', width: '100%' }}
         attributionControl={false}
       >
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-        <FitBounds locations={locations} />
+        <MapView
+          memberLocations={locations}
+          currentUserLocation={currentUserLocation ? { lat: currentUserLocation.lat, lng: currentUserLocation.lng } : null}
+        />
         {locations.map((loc) => (
           <Marker
             key={loc.userId}
@@ -173,6 +202,7 @@ export function EventLocationMap({
           </Marker>
         ))}
       </MapContainer>
+      </Box>
     </Box>
   )
 }

@@ -46,6 +46,7 @@ import { ActivityListCard } from './components/ActivityListCard'
 import { EventsListCard } from './components/EventsListCard'
 import { MainDrawer } from './components/MainDrawer'
 import { CreateEventDialog } from './components/CreateEventDialog'
+import { EditEventDialog } from './components/EditEventDialog'
 import { EventAttendanceDialog } from './components/EventAttendanceDialog'
 import { Login } from './Login.tsx'
 import { UserSettingsDialog } from './components/UserSettingsDialog'
@@ -151,6 +152,7 @@ function AppContent({ themeMode, onToggleTheme }: { themeMode: ThemeMode; onTogg
     null,
   )
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [editEventOpen, setEditEventOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [showAdmin, setShowAdmin] = useState(false)
   const [phonePromptOpen, setPhonePromptOpen] = useState(false)
@@ -382,17 +384,19 @@ function AppContent({ themeMode, onToggleTheme }: { themeMode: ThemeMode; onTogg
 
   const handleCreateEvent = async () => {
     const trimmedName = newEventDraft.name.trim()
-    if (!trimmedName) return
+    if (!trimmedName || !auth) return
 
     try {
       const response = await fetch(`${API_URL}/events`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${auth.token}`,
         },
         body: JSON.stringify({
           ...newEventDraft,
           name: trimmedName,
+          locationUrl: newEventDraft.location_url || undefined,
         }),
       })
 
@@ -414,6 +418,7 @@ function AppContent({ themeMode, onToggleTheme }: { themeMode: ThemeMode; onTogg
         date: '',
         time: '',
         location: '',
+        location_url: undefined,
         type: 'cycling',
         description: '',
       })
@@ -532,6 +537,49 @@ function AppContent({ themeMode, onToggleTheme }: { themeMode: ThemeMode; onTogg
   const handleRequestDeleteActiveEvent = () => {
     if (!activeEvent) return
     setDeleteConfirmOpen(true)
+  }
+
+  const handleRequestEditActiveEvent = () => {
+    if (!activeEvent) return
+    setEditEventOpen(true)
+  }
+
+  const handleSaveEditEvent = async (data: Omit<ClubEvent, 'id'>) => {
+    if (!auth || !activeEvent) return
+
+    try {
+      const res = await fetch(`${API_URL}/events/${activeEvent.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${auth.token}`,
+        },
+        body: JSON.stringify({
+          name: data.name,
+          date: data.date,
+          time: data.time,
+          location: data.location,
+          locationUrl: data.location_url ?? null,
+          type: data.type,
+          description: data.description,
+        }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data?.message ?? 'Failed to update event')
+      }
+
+      const updated = await res.json()
+
+      setEvents((prev) =>
+        prev.map((e) => (e.id === activeEvent.id ? updated : e)),
+      )
+      setActiveEvent(updated)
+    } catch (err) {
+      console.error('Failed to update event', err)
+      throw err
+    }
   }
 
   const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
@@ -896,6 +944,13 @@ function AppContent({ themeMode, onToggleTheme }: { themeMode: ThemeMode; onTogg
         onCreate={handleCreateEvent}
       />
 
+      <EditEventDialog
+        open={editEventOpen}
+        event={activeEvent}
+        onClose={() => setEditEventOpen(false)}
+        onSave={handleSaveEditEvent}
+      />
+
       <EventAttendanceDialog
         event={activeEvent}
         members={members}
@@ -913,6 +968,7 @@ function AppContent({ themeMode, onToggleTheme }: { themeMode: ThemeMode; onTogg
         currentUserMemberId={currentUserMemberId}
         currentUserAvatarUrl={userAvatarUrl}
         onDeleteEvent={handleRequestDeleteActiveEvent}
+        onEditEvent={handleRequestEditActiveEvent}
         authToken={auth.token}
         currentUserId={auth.userId}
       />
