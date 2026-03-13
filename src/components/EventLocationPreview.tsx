@@ -132,7 +132,7 @@ export function EventLocationPreview({ location, locationUrl }: Props) {
       <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: 13, mb: 0.5 }}>
         Starting location
       </Typography>
-      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.5 }}>
+      <Stack spacing={0.5} sx={{ mb: 0.5 }}>
         <Typography variant="body2" color="text.secondary" sx={{ fontSize: 13 }}>
           {location}
         </Typography>

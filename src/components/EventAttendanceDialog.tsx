@@ -36,6 +36,36 @@ import { EventLocationMap } from './EventLocationMap'
 import { EventLocationPreview } from './EventLocationPreview'
 import { EventChat } from './EventChat'
 
+function CourseMapSection({ url }: { url: string }) {
+  return (
+    <Box sx={{ mt: 1 }}>
+      <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: 13, mb: 0.5 }}>
+        Course map
+      </Typography>
+      <Stack direction="row" spacing={2} flexWrap="wrap">
+        <Link
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          sx={{ display: 'flex', alignItems: 'center', gap: 0.25, fontSize: 13 }}
+        >
+          <OpenInNew sx={{ fontSize: 14 }} />
+          View full version
+        </Link>
+        <Link
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          sx={{ display: 'flex', alignItems: 'center', gap: 0.25, fontSize: 13 }}
+        >
+          <OpenInNew sx={{ fontSize: 14 }} />
+          Send to device
+        </Link>
+      </Stack>
+    </Box>
+  )
+}
+
 function ToggleActionButton({
   isIn,
   onToggle,
@@ -145,20 +175,7 @@ export function EventAttendanceDialog(props: {
               />
             )}
             {(event as { course_map_url?: string | null }).course_map_url && (
-              <Box sx={{ mt: 1 }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: 13, mb: 0.5 }}>
-                  Course map
-                </Typography>
-                <Link
-                  href={(event as { course_map_url?: string }).course_map_url!}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  sx={{ display: 'flex', alignItems: 'center', gap: 0.25, fontSize: 13 }}
-                >
-                  <OpenInNew sx={{ fontSize: 14 }} />
-                  View route map
-                </Link>
-              </Box>
+              <CourseMapSection url={(event as { course_map_url?: string }).course_map_url!} />
             )}
             {currentUserStatus && (
               <Box
