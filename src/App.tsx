@@ -30,13 +30,16 @@ import {
 import {
   Add,
   CheckCircle,
+  DirectionsBike,
+  DirectionsRun,
   Event as EventIcon,
   History,
   AdminPanelSettings,
   DarkMode,
   LightMode,
-  Settings,
   Logout as LogoutIcon,
+  Pool,
+  Settings,
 } from '@mui/icons-material'
 import { useState, useEffect, useSyncExternalStore } from 'react'
 
@@ -701,9 +704,11 @@ function AppContent({ themeMode, onToggleTheme }: { themeMode: ThemeMode; onTogg
               >
                 Shark Tracker
               </Typography>
-              <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                Cycling · Swimming · Running
-              </Typography>
+              <Stack direction="row" spacing={1} alignItems="center" sx={{ opacity: 0.9 }}>
+                <Pool sx={{ fontSize: 20 }} />
+                <DirectionsBike sx={{ fontSize: 20 }} />
+                <DirectionsRun sx={{ fontSize: 20 }} />
+              </Stack>
             </Box>
           </Box>
           <IconButton

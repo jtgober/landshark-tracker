@@ -20,12 +20,14 @@ import {
 } from '@mui/material'
 import {
   CheckCircle,
-  Login,
-  Logout,
   DeleteOutline,
   Edit as EditIcon,
+  Login,
+  Logout,
   Map as MapIcon,
   OpenInNew,
+  PersonAdd,
+  PersonRemove,
   Phone,
   Sms,
 } from '@mui/icons-material'
@@ -50,16 +52,7 @@ function CourseMapSection({ url }: { url: string }) {
           sx={{ display: 'flex', alignItems: 'center', gap: 0.25, fontSize: 13 }}
         >
           <OpenInNew sx={{ fontSize: 14 }} />
-          View full version
-        </Link>
-        <Link
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          sx={{ display: 'flex', alignItems: 'center', gap: 0.25, fontSize: 13 }}
-        >
-          <OpenInNew sx={{ fontSize: 14 }} />
-          Send to device
+          View course map
         </Link>
       </Stack>
     </Box>
@@ -212,24 +205,37 @@ export function EventAttendanceDialog(props: {
                     </Typography>
                   </Box>
                   {currentUserStatus === 'none' ? (
-                    <Button
-                      size="small"
-                      variant="contained"
-                      onClick={onJoinEvent}
-                      sx={{ borderRadius: 999, fontSize: 13 }}
-                    >
-                      Join event
-                    </Button>
+                    <Tooltip title="Join event" placement="left">
+                      <IconButton
+                        onClick={onJoinEvent}
+                        size="medium"
+                        color="primary"
+                        sx={{
+                          bgcolor: 'primary.main',
+                          color: 'primary.contrastText',
+                          '&:hover': { bgcolor: 'primary.dark' },
+                          borderRadius: 999,
+                        }}
+                      >
+                        <PersonAdd />
+                      </IconButton>
+                    </Tooltip>
                   ) : (
-                    <Button
-                      size="small"
-                      variant="contained"
-                      color="error"
-                      onClick={onLeaveEvent}
-                      sx={{ borderRadius: 999, fontSize: 13 }}
-                    >
-                      Leave
-                    </Button>
+                    <Tooltip title="Leave event" placement="left">
+                      <IconButton
+                        onClick={onLeaveEvent}
+                        size="medium"
+                        color="error"
+                        sx={{
+                          bgcolor: 'error.main',
+                          color: 'error.contrastText',
+                          '&:hover': { bgcolor: 'error.dark' },
+                          borderRadius: 999,
+                        }}
+                      >
+                        <PersonRemove />
+                      </IconButton>
+                    </Tooltip>
                   )}
                 </Stack>
               </Box>
@@ -239,8 +245,7 @@ export function EventAttendanceDialog(props: {
               color="text.secondary"
               sx={{ fontSize: 13.5 }}
             >
-              Tap a member to mark them as checked in when they start, and
-              checked out when they return safely.
+              Tap the icon to check in when you start, and to check out when you return safely.
             </Typography>
             <List disablePadding>
               {event &&
