@@ -4,6 +4,7 @@ import {
   Avatar,
   Box,
   Button,
+  CircularProgress,
   Container,
   CssBaseline,
   IconButton,
@@ -41,21 +42,22 @@ import {
   Pool,
   Settings,
 } from '@mui/icons-material'
-import { useState, useEffect, useSyncExternalStore } from 'react'
+import { useState, useEffect, useSyncExternalStore, lazy, Suspense } from 'react'
 
 import type { Member, Activity, ClubEvent } from './types'
 
 import { ActivityListCard } from './components/ActivityListCard'
 import { EventsListCard } from './components/EventsListCard'
 import { MainDrawer } from './components/MainDrawer'
-import { CreateEventDialog } from './components/CreateEventDialog'
-import { EditEventDialog } from './components/EditEventDialog'
-import { EventAttendanceDialog } from './components/EventAttendanceDialog'
-import { Login } from './Login.tsx'
-import { UserSettingsDialog } from './components/UserSettingsDialog'
 import { API_URL, API_BASE } from './config'
 import { useGpsTracking } from './hooks/useGpsTracking'
-import { AdminPanel } from './components/AdminPanel'
+
+const AdminPanel = lazy(() => import('./components/AdminPanel').then((m) => ({ default: m.AdminPanel })))
+const CreateEventDialog = lazy(() => import('./components/CreateEventDialog').then((m) => ({ default: m.CreateEventDialog })))
+const EditEventDialog = lazy(() => import('./components/EditEventDialog').then((m) => ({ default: m.EditEventDialog })))
+const EventAttendanceDialog = lazy(() => import('./components/EventAttendanceDialog').then((m) => ({ default: m.EventAttendanceDialog })))
+const Login = lazy(() => import('./Login').then((m) => ({ default: m.Login })))
+const UserSettingsDialog = lazy(() => import('./components/UserSettingsDialog').then((m) => ({ default: m.UserSettingsDialog })))
 
 type ThemeMode = 'light' | 'dark'
 
@@ -619,8 +621,15 @@ function AppContent({ themeMode, onToggleTheme }: { themeMode: ThemeMode; onTogg
 
   if (!auth) {
     return (
-      <Login
-        onAuthSuccess={({
+      <Suspense
+        fallback={
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+            <CircularProgress />
+          </Box>
+        }
+      >
+        <Login
+          onAuthSuccess={({
           token,
           email,
           userId,
@@ -638,7 +647,8 @@ function AppContent({ themeMode, onToggleTheme }: { themeMode: ThemeMode; onTogg
           localStorage.setItem('authRole', userRole)
           setAuth({ token, email, userId, role: userRole })
         }}
-      />
+        />
+      </Suspense>
     )
   }
 
@@ -667,7 +677,15 @@ function AppContent({ themeMode, onToggleTheme }: { themeMode: ThemeMode; onTogg
       )}
 
       {showAdmin && (
-        <AdminPanel auth={auth} onBack={() => setShowAdmin(false)} />
+        <Suspense
+          fallback={
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+              <CircularProgress />
+            </Box>
+          }
+        >
+          <AdminPanel auth={auth} onBack={() => setShowAdmin(false)} />
+        </Suspense>
       )}
 
       {!showAdmin && (<>
@@ -851,7 +869,7 @@ function AppContent({ themeMode, onToggleTheme }: { themeMode: ThemeMode; onTogg
                   variant="h5"
                   sx={{ fontWeight: 700, mb: 0.5, fontSize: 22 }}
                 >
-                  Event safety dashboard
+                  Event dashboard
                 </Typography>
                 <Typography
                   variant="body2"
@@ -949,22 +967,23 @@ function AppContent({ themeMode, onToggleTheme }: { themeMode: ThemeMode; onTogg
 
       <MainDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
 
-      <CreateEventDialog
-        open={newEventOpen}
-        onClose={() => setNewEventOpen(false)}
-        draft={newEventDraft}
-        onChange={setNewEventDraft}
-        onCreate={handleCreateEvent}
-      />
+      <Suspense fallback={null}>
+        <CreateEventDialog
+          open={newEventOpen}
+          onClose={() => setNewEventOpen(false)}
+          draft={newEventDraft}
+          onChange={setNewEventDraft}
+          onCreate={handleCreateEvent}
+        />
 
-      <EditEventDialog
-        open={editEventOpen}
-        event={activeEvent}
-        onClose={() => setEditEventOpen(false)}
-        onSave={handleSaveEditEvent}
-      />
+        <EditEventDialog
+          open={editEventOpen}
+          event={activeEvent}
+          onClose={() => setEditEventOpen(false)}
+          onSave={handleSaveEditEvent}
+        />
 
-      <EventAttendanceDialog
+        <EventAttendanceDialog
         event={activeEvent}
         members={members}
         attendance={attendance}
@@ -984,7 +1003,54 @@ function AppContent({ themeMode, onToggleTheme }: { themeMode: ThemeMode; onTogg
         onEditEvent={handleRequestEditActiveEvent}
         authToken={auth.token}
         currentUserId={auth.userId}
-      />
+        />
+
+        <UserSettingsDialog
+          open={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+          auth={auth}
+          avatarUrl={userAvatarUrl}
+          phone={
+            auth?.userId
+              ? localStorage.getItem(`authPhone_${auth.userId}`) ?? ''
+              : ''
+          }
+          displayName={
+            auth?.userId
+              ? localStorage.getItem(`authDisplayName_${auth.userId}`) ?? ''
+              : ''
+          }
+          onAuthUpdate={(next) => {
+            setAuth((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    email: next.email ?? prev.email,
+                  }
+                : prev
+            )
+            if (next.email) {
+              localStorage.setItem('authEmail', next.email)
+            }
+            if (next.phone !== undefined && auth?.userId) {
+              localStorage.setItem(`authPhone_${auth.userId}`, next.phone)
+            }
+            if (next.displayName !== undefined && auth?.userId) {
+              localStorage.setItem(`authDisplayName_${auth.userId}`, next.displayName)
+              setDataVersion(v => v + 1)
+            }
+            if (next.avatarUrl && auth?.userId) {
+              localStorage.setItem(`authAvatarUrl_${auth.userId}`, next.avatarUrl)
+              localStorage.setItem(
+                `authAvatarVersion_${auth.userId}`,
+                next.avatarUpdatedAt ?? Date.now().toString(),
+              )
+              setAvatarTick(t => t + 1)
+              setDataVersion(v => v + 1)
+            }
+          }}
+        />
+      </Suspense>
 
       <Dialog
         open={deleteConfirmOpen && Boolean(activeEvent)}
@@ -1100,52 +1166,6 @@ function AppContent({ themeMode, onToggleTheme }: { themeMode: ThemeMode; onTogg
           </Button>
         </DialogActions>
       </Dialog>
-
-      <UserSettingsDialog
-        open={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-        auth={auth}
-        avatarUrl={userAvatarUrl}
-        phone={
-          auth?.userId
-            ? localStorage.getItem(`authPhone_${auth.userId}`) ?? ''
-            : ''
-        }
-        displayName={
-          auth?.userId
-            ? localStorage.getItem(`authDisplayName_${auth.userId}`) ?? ''
-            : ''
-        }
-        onAuthUpdate={(next) => {
-          setAuth((prev) =>
-            prev
-              ? {
-                  ...prev,
-                  email: next.email ?? prev.email,
-                }
-              : prev,
-          )
-          if (next.email) {
-            localStorage.setItem('authEmail', next.email)
-          }
-          if (next.phone !== undefined && auth?.userId) {
-            localStorage.setItem(`authPhone_${auth.userId}`, next.phone)
-          }
-          if (next.displayName !== undefined && auth?.userId) {
-            localStorage.setItem(`authDisplayName_${auth.userId}`, next.displayName)
-            setDataVersion(v => v + 1)
-          }
-          if (next.avatarUrl && auth?.userId) {
-            localStorage.setItem(`authAvatarUrl_${auth.userId}`, next.avatarUrl)
-            localStorage.setItem(
-              `authAvatarVersion_${auth.userId}`,
-              next.avatarUpdatedAt ?? Date.now().toString(),
-            )
-            setAvatarTick(t => t + 1)
-            setDataVersion(v => v + 1)
-          }
-        }}
-      />
       </>)}
     </Box>
   )
