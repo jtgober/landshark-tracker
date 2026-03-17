@@ -47,8 +47,8 @@ export function parseCoordsFromMapUrl(url: string): { lat: number; lng: number }
     const atMatch = url.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)(?:[,/]|z|$)/i)
     if (atMatch) return parsePair(atMatch)
 
-    // Google place: !3dlat!4dlng
-    const dMatch = url.match(/!3d(-?\d+\.?\d*)!4d(-?\d+\.?\d*)/)
+    // Google place: !3dlat!4dlng (may have other ! segments between)
+    const dMatch = url.match(/!3d(-?\d+\.?\d*)[^!]*!4d(-?\d+\.?\d*)/)
     if (dMatch) return parsePair(dMatch)
 
     // ll=lat,lng (Google/Apple)
@@ -69,5 +69,40 @@ export function parseCoordsFromMapUrl(url: string): { lat: number; lng: number }
   } catch {
     /* ignore */
   }
+  return null
+}
+
+/** Extract address from Google Maps place URL path (e.g. /place/Yellow+Lot,+1401+River+Rd,...) */
+export function extractAddressFromPlaceUrl(url: string): string | null {
+  try {
+    const m = url.match(/\/place\/([^/]+)(?:\/|$|\?)/)
+    if (!m) return null
+    const decoded = decodeURIComponent(m[1].replace(/\+/g, ' ')).trim()
+    return decoded.length > 0 ? decoded : null
+  } catch {
+    return null
+  }
+}
+
+/** Geocode an address via Nominatim; tries full address first, then street part if empty */
+export async function geocodeAddress(address: string): Promise<{ lat: number; lng: number } | null> {
+  const tryGeocode = async (q: string) => {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`,
+      {
+        headers: {
+          Accept: 'application/json',
+          'User-Agent': 'SharkTracker/1.0 (event location preview)',
+        },
+      }
+    )
+    const data = (await res.json()) as { lat: string; lon: string }[]
+    return data.length > 0 ? { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) } : null
+  }
+  const result = await tryGeocode(address)
+  if (result) return result
+  // "Place Name, 123 Street, City" -> try "123 Street, City"
+  const afterFirstComma = address.replace(/^[^,]+,?\s*/, '').trim()
+  if (afterFirstComma && afterFirstComma !== address) return tryGeocode(afterFirstComma)
   return null
 }

@@ -39,10 +39,10 @@ export const resolveMapUrl = async (req: Request, res: Response) => {
 
   try {
     const response = await fetch(url, {
-      method: 'HEAD',
+      method: 'GET',
       redirect: 'follow',
       headers: {
-        'User-Agent': 'Shark-In/1.0 (map link resolver)',
+        'User-Agent': 'Mozilla/5.0 (compatible; Shark-In/1.0; +https://github.com/shark-in)',
       },
     })
     const resolved = response.url
