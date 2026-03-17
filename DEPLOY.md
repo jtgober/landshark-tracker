@@ -7,6 +7,14 @@ This guide gets the **frontend** (Vite/React) and **backend** (Node/Express) dep
 - **404 on the app (frontend)** – You might be opening a direct link like `yoursite.vercel.app/events`. The SPA needs the server to serve `index.html` for all routes. The repo’s `vercel.json` already has rewrites for that; redeploy the frontend if you changed it.
 - **404 on the API** – Check the backend URL. The frontend must call the **backend** URL (e.g. `https://shark-in-api.onrender.com`), not the frontend URL. In Vercel, set `VITE_API_URL` to your Render API URL (no trailing slash). Test the API in a browser: open `https://your-api.onrender.com/api/health` – you should see `{"status":"ok",...}`. If that returns 404, the backend isn’t running or the path is wrong.
 
+## If the map doesn’t parse in production
+
+The starting-location map needs the backend to resolve Google Maps links and geocode addresses. If it works locally but not when deployed:
+
+1. **Verify `VITE_API_URL`** – In Vercel → Project → Settings → Environment Variables, ensure `VITE_API_URL` is set to your backend URL (e.g. `https://shark-in-api.onrender.com`) with no trailing slash. Redeploy the frontend after changing it.
+2. **Verify the backend** – Open `https://YOUR_BACKEND/api/maps/coordinates?url=https%3A%2F%2Fmaps.app.goo.gl%2FqFU2ZX4D8h94kgaK9` in a browser. You should see `{"lat":38.26,"lng":-85.73}` (or similar). If you get 404, redeploy the backend so it includes the `/api/maps/coordinates` endpoint.
+3. **Fallback** – If the backend is unreachable, the app will try to geocode the location text (e.g. “Yellow Lot”) instead. That may show a less precise pin but should still display a map.
+
 ## Overview
 
 | Part      | Recommended host | Why                          |

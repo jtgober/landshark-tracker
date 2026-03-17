@@ -4,7 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { OpenInNew } from '@mui/icons-material'
-import { fetchCoordinatesFromMapUrl, parseCoordsFromMapUrl } from '../utils/mapCoords'
+import { fetchCoordinatesFromMapUrl, geocodeLocationText, parseCoordsFromMapUrl } from '../utils/mapCoords'
 
 // Fix Leaflet default icon
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
@@ -66,8 +66,26 @@ export function EventLocationPreview({ location, locationUrl }: Props) {
       fetchCoordinatesFromMapUrl(url)
         .then((parsed) => {
           if (!cancelled) {
-            if (parsed) setCoords(parsed)
-            else {
+            if (parsed) {
+              setCoords(parsed)
+            } else if (location?.trim()) {
+              // Fallback: geocode location text when backend fails (e.g. wrong API URL)
+              geocodeLocationText(location.trim())
+                .then((fallback) => {
+                  if (!cancelled) {
+                    setCoords(fallback)
+                    setLoading(false)
+                  }
+                })
+                .catch(() => {
+                  if (!cancelled) {
+                    setCoords(null)
+                    setError(true)
+                    setLoading(false)
+                  }
+                })
+              return
+            } else {
               setCoords(null)
               setError(true)
             }
@@ -75,7 +93,22 @@ export function EventLocationPreview({ location, locationUrl }: Props) {
           }
         })
         .catch(() => {
-          if (!cancelled) {
+          if (!cancelled && location?.trim()) {
+            geocodeLocationText(location.trim())
+              .then((fallback) => {
+                if (!cancelled) {
+                  setCoords(fallback)
+                  setLoading(false)
+                }
+              })
+              .catch(() => {
+                if (!cancelled) {
+                  setCoords(null)
+                  setError(true)
+                  setLoading(false)
+                }
+              })
+          } else if (!cancelled) {
             setCoords(null)
             setError(true)
             setLoading(false)

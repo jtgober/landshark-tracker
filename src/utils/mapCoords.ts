@@ -16,15 +16,52 @@ export async function fetchCoordinatesFromMapUrl(
   url: string
 ): Promise<{ lat: number; lng: number } | null> {
   if (!isMapUrl(url)) return null
-  const res = await fetch(
-    `${API_URL}/maps/coordinates?url=${encodeURIComponent(url)}`
-  )
-  if (!res.ok) return null
-  const data = (await res.json()) as { lat?: number; lng?: number }
-  if (typeof data?.lat === 'number' && typeof data?.lng === 'number') {
-    return { lat: data.lat, lng: data.lng }
+  const encoded = encodeURIComponent(url)
+  const tryFetch = (base: string) =>
+    fetch(`${base}/maps/coordinates?url=${encoded}`).then(async (res) => {
+      if (!res.ok) return null
+      const data = (await res.json()) as { lat?: number; lng?: number }
+      return typeof data?.lat === 'number' && typeof data?.lng === 'number'
+        ? { lat: data.lat, lng: data.lng }
+        : null
+    })
+  try {
+    const result = await tryFetch(API_URL)
+    if (result) return result
+  } catch {
+    /* ignore */
+  }
+  // Retry same-origin when API may be proxied (e.g. /api -> backend)
+  if (typeof window !== 'undefined') {
+    const sameOrigin = `${window.location.origin}/api`
+    if (sameOrigin !== API_URL) {
+      try {
+        return (await tryFetch(sameOrigin)) ?? null
+      } catch {
+        /* ignore */
+      }
+    }
   }
   return null
+}
+
+/** Geocode address text via Nominatim (client-side; may have CORS limits in production) */
+export async function geocodeLocationText(
+  address: string
+): Promise<{ lat: number; lng: number } | null> {
+  const res = await fetch(
+    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`,
+    {
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'SharkTracker/1.0 (event location preview)',
+      },
+    }
+  )
+  const data = (await res.json()) as { lat: string; lon: string }[]
+  return data.length > 0
+    ? { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) }
+    : null
 }
 
 function parsePair(match: RegExpMatchArray | null): { lat: number; lng: number } | null {
