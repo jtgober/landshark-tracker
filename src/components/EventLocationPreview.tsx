@@ -4,7 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { OpenInNew } from '@mui/icons-material'
-import { extractAddressFromPlaceUrl, geocodeAddress, isShortMapUrl, parseCoordsFromMapUrl, resolveShortMapUrl } from '../utils/mapCoords'
+import { fetchCoordinatesFromMapUrl, parseCoordsFromMapUrl } from '../utils/mapCoords'
 
 // Fix Leaflet default icon
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
@@ -53,70 +53,34 @@ export function EventLocationPreview({ location, locationUrl }: Props) {
     if (locationUrl?.trim()) {
       const url = locationUrl.trim()
       const fromUrl = parseCoordsFromMapUrl(url)
-      if (!fromUrl && isShortMapUrl(url)) {
-        resolveShortMapUrl(url)
-          .then((resolved) => {
-            const parsed = parseCoordsFromMapUrl(resolved)
-            if (parsed) return parsed
-            // Place URLs often have no coords; extract address and geocode
-            const address = extractAddressFromPlaceUrl(resolved)
-            return address ? geocodeAddress(address) : null
-          })
-          .then((parsed) => {
-            if (!cancelled) {
-              if (parsed) setCoords(parsed)
-              else {
-                setCoords(null)
-                setError(true)
-              }
-              setLoading(false)
-            }
-          })
-          .catch(() => {
-            if (!cancelled) {
-              setCoords(null)
-              setError(true)
-              setLoading(false)
-            }
-          })
+      if (fromUrl) {
+        queueMicrotask(() => {
+          if (!cancelled) {
+            setCoords(fromUrl)
+            setLoading(false)
+          }
+        })
         return () => { cancelled = true }
       }
-      // No coords in URL; try extracting address from place URL and geocoding
-      if (!fromUrl) {
-        const address = extractAddressFromPlaceUrl(url)
-        if (address) {
-          geocodeAddress(address)
-            .then((parsed) => {
-              if (!cancelled) {
-                if (parsed) setCoords(parsed)
-                else {
-                  setCoords(null)
-                  setError(true)
-                }
-                setLoading(false)
-              }
-            })
-            .catch(() => {
-              if (!cancelled) {
-                setCoords(null)
-                setError(true)
-                setLoading(false)
-              }
-            })
-          return () => { cancelled = true }
-        }
-      }
-      queueMicrotask(() => {
-        if (!cancelled) {
-          if (fromUrl) {
-            setCoords(fromUrl)
-          } else {
+      // No coords in URL: use backend (resolve + geocode) — avoids CORS in production
+      fetchCoordinatesFromMapUrl(url)
+        .then((parsed) => {
+          if (!cancelled) {
+            if (parsed) setCoords(parsed)
+            else {
+              setCoords(null)
+              setError(true)
+            }
+            setLoading(false)
+          }
+        })
+        .catch(() => {
+          if (!cancelled) {
             setCoords(null)
             setError(true)
+            setLoading(false)
           }
-          setLoading(false)
-        }
-      })
+        })
       return () => { cancelled = true }
     }
 

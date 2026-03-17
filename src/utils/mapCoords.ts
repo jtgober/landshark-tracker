@@ -1,25 +1,30 @@
 import { API_URL } from '../config'
 
-const SHORT_MAP_DOMAINS = ['maps.app.goo.gl', 'goo.gl']
+const MAP_DOMAINS = ['maps.app.goo.gl', 'goo.gl', 'www.google.com', 'google.com', 'maps.google.com']
 
-export function isShortMapUrl(url: string): boolean {
+function isMapUrl(url: string): boolean {
   try {
     const host = new URL(url).hostname.toLowerCase()
-    return SHORT_MAP_DOMAINS.some((d) => host === d || host.endsWith('.' + d))
+    return MAP_DOMAINS.some((d) => host === d || host.endsWith('.' + d))
   } catch {
     return false
   }
 }
 
-/** Resolve short map URLs (e.g. maps.app.goo.gl/xxx) to full URL with coordinates */
-export async function resolveShortMapUrl(url: string): Promise<string> {
-  if (!isShortMapUrl(url)) return url
+/** Fetch coordinates from map URL via backend (avoids CORS, works in production) */
+export async function fetchCoordinatesFromMapUrl(
+  url: string
+): Promise<{ lat: number; lng: number } | null> {
+  if (!isMapUrl(url)) return null
   const res = await fetch(
-    `${API_URL}/maps/resolve?url=${encodeURIComponent(url)}`,
+    `${API_URL}/maps/coordinates?url=${encodeURIComponent(url)}`
   )
-  if (!res.ok) throw new Error('Failed to resolve map link')
-  const data = (await res.json()) as { url?: string }
-  return data.url ?? url
+  if (!res.ok) return null
+  const data = (await res.json()) as { lat?: number; lng?: number }
+  if (typeof data?.lat === 'number' && typeof data?.lng === 'number') {
+    return { lat: data.lat, lng: data.lng }
+  }
+  return null
 }
 
 function parsePair(match: RegExpMatchArray | null): { lat: number; lng: number } | null {
@@ -72,37 +77,3 @@ export function parseCoordsFromMapUrl(url: string): { lat: number; lng: number }
   return null
 }
 
-/** Extract address from Google Maps place URL path (e.g. /place/Yellow+Lot,+1401+River+Rd,...) */
-export function extractAddressFromPlaceUrl(url: string): string | null {
-  try {
-    const m = url.match(/\/place\/([^/]+)(?:\/|$|\?)/)
-    if (!m) return null
-    const decoded = decodeURIComponent(m[1].replace(/\+/g, ' ')).trim()
-    return decoded.length > 0 ? decoded : null
-  } catch {
-    return null
-  }
-}
-
-/** Geocode an address via Nominatim; tries full address first, then street part if empty */
-export async function geocodeAddress(address: string): Promise<{ lat: number; lng: number } | null> {
-  const tryGeocode = async (q: string) => {
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`,
-      {
-        headers: {
-          Accept: 'application/json',
-          'User-Agent': 'SharkTracker/1.0 (event location preview)',
-        },
-      }
-    )
-    const data = (await res.json()) as { lat: string; lon: string }[]
-    return data.length > 0 ? { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) } : null
-  }
-  const result = await tryGeocode(address)
-  if (result) return result
-  // "Place Name, 123 Street, City" -> try "123 Street, City"
-  const afterFirstComma = address.replace(/^[^,]+,?\s*/, '').trim()
-  if (afterFirstComma && afterFirstComma !== address) return tryGeocode(afterFirstComma)
-  return null
-}
