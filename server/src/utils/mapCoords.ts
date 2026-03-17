@@ -56,9 +56,11 @@ export function extractAddressFromPlaceUrl(url: string): string | null {
 
 /** Geocode an address via Nominatim (server-side, no CORS) */
 export async function geocodeAddress(address: string): Promise<{ lat: number; lng: number } | null> {
+  // viewbox=US (approx) biases results when address is ambiguous
+  const viewbox = 'viewbox=-125,24,-66,50'
   const tryGeocode = async (q: string) => {
     const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`,
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1&${viewbox}`,
       {
         headers: {
           Accept: 'application/json',

@@ -6,6 +6,11 @@ import 'leaflet/dist/leaflet.css'
 import { OpenInNew } from '@mui/icons-material'
 import { fetchCoordinatesFromMapUrl, geocodeLocationText, parseCoordsFromMapUrl } from '../utils/mapCoords'
 
+/** Heuristic: location has comma or digits (street number) — avoid geocoding vague names like "Yellow Lot" */
+function looksLikeAddress(s: string): boolean {
+  return /,/.test(s) || /\d/.test(s)
+}
+
 // Fix Leaflet default icon
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
@@ -28,6 +33,18 @@ function CenterMap({ lat, lng }: { lat: number; lng: number }) {
   useEffect(() => {
     map.setView([lat, lng], 15)
   }, [map, lat, lng])
+  return null
+}
+
+/** Fix Leaflet not rendering in dialogs on mobile — invalidateSize when container is ready */
+function MapResizeFix() {
+  const map = useMap()
+  useEffect(() => {
+    const t = setTimeout(() => {
+      map.invalidateSize()
+    }, 100)
+    return () => clearTimeout(t)
+  }, [map])
   return null
 }
 
@@ -68,8 +85,8 @@ export function EventLocationPreview({ location, locationUrl }: Props) {
           if (!cancelled) {
             if (parsed) {
               setCoords(parsed)
-            } else if (location?.trim()) {
-              // Fallback: geocode location text when backend fails (e.g. wrong API URL)
+            } else if (location?.trim() && looksLikeAddress(location.trim())) {
+              // Fallback: geocode only when location looks like a full address (avoids wrong pin for vague names like "Yellow Lot")
               geocodeLocationText(location.trim())
                 .then((fallback) => {
                   if (!cancelled) {
@@ -93,7 +110,7 @@ export function EventLocationPreview({ location, locationUrl }: Props) {
           }
         })
         .catch(() => {
-          if (!cancelled && location?.trim()) {
+          if (!cancelled && location?.trim() && looksLikeAddress(location.trim())) {
             geocodeLocationText(location.trim())
               .then((fallback) => {
                 if (!cancelled) {
@@ -182,7 +199,7 @@ export function EventLocationPreview({ location, locationUrl }: Props) {
         </Box>
       )}
       {!loading && coords && (
-        <Box sx={{ height: 180, borderRadius: 2, overflow: 'hidden', border: 1, borderColor: 'divider' }}>
+        <Box sx={{ height: 180, minHeight: 180, borderRadius: 2, overflow: 'hidden', border: 1, borderColor: 'divider' }}>
           <MapContainer
             center={[coords.lat, coords.lng]}
             zoom={15}
@@ -194,6 +211,7 @@ export function EventLocationPreview({ location, locationUrl }: Props) {
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             <CenterMap lat={coords.lat} lng={coords.lng} />
+            <MapResizeFix />
             <Marker position={[coords.lat, coords.lng]}>
               <Popup>{location?.trim() || 'Event location'}</Popup>
             </Marker>
