@@ -50,7 +50,7 @@ export async function geocodeLocationText(
   address: string
 ): Promise<{ lat: number; lng: number } | null> {
   const res = await fetch(
-    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`,
+    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1&viewbox=-125,24,-66,50`,
     {
       headers: {
         Accept: 'application/json',

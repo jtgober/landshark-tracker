@@ -42,6 +42,23 @@ export function parseCoordsFromMapUrl(url: string): { lat: number; lng: number }
   return null
 }
 
+/**
+ * When Google blocks with a "sorry" page, the real URL is in the continue= param.
+ * Extract it so we can parse the actual place URL.
+ */
+export function unwrapGoogleSorryUrl(url: string): string {
+  try {
+    if (url.includes('google.com/sorry') && url.includes('continue=')) {
+      const parsed = new URL(url)
+      const cont = parsed.searchParams.get('continue')
+      if (cont) return decodeURIComponent(cont)
+    }
+  } catch {
+    /* ignore */
+  }
+  return url
+}
+
 /** Extract address from Google Maps place URL path */
 export function extractAddressFromPlaceUrl(url: string): string | null {
   try {

@@ -3,6 +3,7 @@ import {
   extractAddressFromPlaceUrl,
   geocodeAddress,
   parseCoordsFromMapUrl,
+  unwrapGoogleSorryUrl,
 } from '../utils/mapCoords'
 
 const ALLOWED_SHORT_DOMAINS = [
@@ -47,10 +48,13 @@ export const resolveMapUrl = async (req: Request, res: Response) => {
       method: 'GET',
       redirect: 'follow',
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; Shark-In/1.0; +https://github.com/shark-in)',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        Accept: 'text/html,application/xhtml+xml',
+        'Accept-Language': 'en-US,en;q=0.9',
       },
     })
-    const resolved = response.url
+    let resolved = response.url || url
+    resolved = unwrapGoogleSorryUrl(resolved)
     if (resolved && resolved !== url) {
       return res.json({ url: resolved })
     }
@@ -110,11 +114,16 @@ export const getMapCoordinates = async (req: Request, res: Response) => {
         method: 'GET',
         redirect: 'follow',
         headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; Shark-In/1.0; +https://github.com/shark-in)',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          Accept: 'text/html,application/xhtml+xml',
+          'Accept-Language': 'en-US,en;q=0.9',
         },
       })
       resolved = response.url || url
     }
+
+    // Google may return a "sorry" page; extract the real URL from continue= param
+    resolved = unwrapGoogleSorryUrl(resolved)
 
     const coords = parseCoordsFromMapUrl(resolved)
     if (coords) return res.json(coords)
