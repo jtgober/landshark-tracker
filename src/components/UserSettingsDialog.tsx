@@ -173,10 +173,13 @@ export function UserSettingsDialog({
             </Typography>
             <Stack direction="row" spacing={1.5} alignItems="center">
               <Avatar
-                src={avatarUrl}
+                src={avatarUrl || undefined}
+                slotProps={{
+                  img: { referrerPolicy: 'no-referrer' as const },
+                }}
                 sx={{ width: 40, height: 40, bgcolor: 'secondary.main' }}
               >
-                {auth.email.charAt(0).toUpperCase()}
+                {!avatarUrl && auth.email.charAt(0).toUpperCase()}
               </Avatar>
               <Button
                 variant="outlined"

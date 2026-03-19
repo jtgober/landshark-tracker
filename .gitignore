@@ -17,6 +17,7 @@ dist-ssr
 server/uploads
 server/*.sqlite
 server/data
+server/.shark-persist
 
 # Editor directories and files
 .vscode/*

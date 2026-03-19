@@ -32,7 +32,7 @@ import {
   Sms,
 } from '@mui/icons-material'
 import type { ClubEvent, Member } from '../types'
-import { API_BASE } from '../config'
+import { resolveAvatarSrc } from '../utils/avatarUrl'
 import { EventAttendanceSummary } from './EventAttendanceSummary'
 import { EventLocationMap } from './EventLocationMap'
 import { EventLocationPreview } from './EventLocationPreview'
@@ -265,9 +265,11 @@ export function EventAttendanceDialog(props: {
                   currentUserMemberId && member.id === currentUserMemberId
                 const avatarSrc =
                   member.avatarUrl != null && member.avatarUrl !== ''
-                    ? member.avatarUrl.startsWith('http')
-                      ? member.avatarUrl
-                      : `${API_BASE}${member.avatarUrl}${member.avatarUpdatedAt ? `?v=${member.avatarUpdatedAt}` : ''}`
+                    ? resolveAvatarSrc(
+                        member.avatarUrl,
+                        member.avatarUpdatedAt ?? null,
+                        { memberId: member.id },
+                      )
                     : isCurrentUser
                       ? currentUserAvatarUrl
                       : undefined

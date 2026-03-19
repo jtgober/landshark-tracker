@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './swagger';
 import { initDb, databasePath, isPersistent } from './database';
-import path from 'path';
+import { uploadsRoot, uploadsIsPersistent } from './paths';
 
 import eventRoutes from './routes/events.routes';
 import memberRoutes from './routes/members.routes';
@@ -14,6 +14,7 @@ import authRoutes from './routes/auth.routes';
 import locationRoutes from './routes/location.routes';
 import mapsRoutes from './routes/maps.routes';
 import messageRoutes from './routes/messages.routes';
+import avatarsRoutes from './routes/avatars.routes';
 
 dotenv.config();
 
@@ -43,7 +44,7 @@ app.get('/api-docs.json', (_req: Request, res: Response) => {
 });
 app.use(
   '/uploads',
-  express.static(path.join(__dirname, '../uploads'), {
+  express.static(uploadsRoot, {
     maxAge: '7d',
   }),
 );
@@ -57,6 +58,7 @@ app.use('/api/activity', activityRoutes);
 app.use('/api/location', locationRoutes);
 app.use('/api/maps', mapsRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/avatars', avatarsRoutes);
 
 // Health check (includes DB mode so you can verify persistent disk is used)
 app.get('/api/health', (_req: Request, res: Response) => {
@@ -65,6 +67,8 @@ app.get('/api/health', (_req: Request, res: Response) => {
     message: 'Shark-in API is running',
     database: isPersistent ? 'persistent' : 'ephemeral',
     databasePath: isPersistent ? databasePath : undefined,
+    uploads: uploadsIsPersistent ? 'persistent' : 'ephemeral',
+    uploadsPath: uploadsRoot,
   });
 });
 
@@ -73,6 +77,7 @@ initDb().then(() => {
   app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
     console.log(`Database: ${databasePath} (${isPersistent ? 'persistent' : 'ephemeral — data is lost on redeploy'})`);
+    console.log(`Uploads: ${uploadsRoot} (${uploadsIsPersistent ? 'persistent' : 'ephemeral — avatar files are lost on redeploy'})`);
   });
 }).catch(err => {
   console.error('Failed to initialize database:', err);

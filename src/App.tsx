@@ -49,7 +49,7 @@ import type { Member, Activity, ClubEvent } from './types'
 import { ActivityListCard } from './components/ActivityListCard'
 import { EventsListCard } from './components/EventsListCard'
 import { MainDrawer } from './components/MainDrawer'
-import { API_URL, API_BASE } from './config'
+import { API_URL, apiPublicUrl } from './config'
 import { useGpsTracking } from './hooks/useGpsTracking'
 
 const AdminPanel = lazy(() => import('./components/AdminPanel').then((m) => ({ default: m.AdminPanel })))
@@ -167,30 +167,24 @@ function AppContent({ themeMode, onToggleTheme }: { themeMode: ThemeMode; onTogg
   const [, setAvatarTick] = useState(0)
   const [dataVersion, setDataVersion] = useState(0)
 
-  const avatarStorageKey = auth?.userId ? `authAvatarUrl_${auth.userId}` : ''
   const versionStorageKey = auth?.userId ? `authAvatarVersion_${auth.userId}` : ''
-
-  const storedAvatarPath =
-    typeof window !== 'undefined' && avatarStorageKey
-      ? localStorage.getItem(avatarStorageKey) || undefined
-      : undefined
 
   const storedAvatarVersion =
     typeof window !== 'undefined' && versionStorageKey
       ? localStorage.getItem(versionStorageKey) || undefined
       : undefined
 
-  const userAvatarUrl =
-    (storedAvatarPath && auth
-      ? `${API_BASE}${storedAvatarPath}${
-          storedAvatarVersion ? `?v=${storedAvatarVersion}` : ''
-        }`
-      : undefined) ||
-    (auth
-      ? `https://api.dicebear.com/9.x/pixel-art/svg?seed=${encodeURIComponent(
-          auth.email,
-        )}&size=64`
-      : '')
+  // Always load via API so: (1) uploaded files use the same disk as the DB,
+  // (2) we serve PNG for defaults (SVG in <img> often breaks → "T" fallback).
+  const userAvatarUrl = auth
+    ? apiPublicUrl(
+        `/api/avatars/user/${encodeURIComponent(auth.userId)}${
+          storedAvatarVersion
+            ? `?v=${encodeURIComponent(storedAvatarVersion)}`
+            : ''
+        }`,
+      )
+    : ''
 
   const currentUserMemberId = auth ? `user-${auth.userId}` : undefined
   const gps = useGpsTracking(auth?.token ?? null)
@@ -747,7 +741,10 @@ function AppContent({ themeMode, onToggleTheme }: { themeMode: ThemeMode; onTogg
             size="small"
           >
             <Avatar
-              src={userAvatarUrl}
+              src={userAvatarUrl || undefined}
+              slotProps={{
+                img: { referrerPolicy: 'no-referrer' as const },
+              }}
               sx={{
                 width: 32,
                 height: 32,
@@ -755,7 +752,7 @@ function AppContent({ themeMode, onToggleTheme }: { themeMode: ThemeMode; onTogg
                 border: '2px solid rgba(255,255,255,0.9)',
               }}
             >
-              {auth.email.charAt(0).toUpperCase()}
+              {!userAvatarUrl && auth.email.charAt(0).toUpperCase()}
             </Avatar>
           </IconButton>
         </Toolbar>

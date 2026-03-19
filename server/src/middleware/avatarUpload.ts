@@ -1,17 +1,11 @@
 import multer from 'multer'
 import path from 'path'
-import fs from 'fs'
 import type { Request } from 'express'
 import type { AuthedRequest } from './auth.middleware'
-
-const uploadRoot = path.join(__dirname, '../../uploads/avatars')
-
-if (!fs.existsSync(uploadRoot)) {
-  fs.mkdirSync(uploadRoot, { recursive: true })
-}
+import { avatarUploadDir } from '../paths'
 
 const storage = multer.diskStorage({
-  destination: uploadRoot,
+  destination: avatarUploadDir,
   filename: (
     req: Request,
     file: Express.Multer.File,

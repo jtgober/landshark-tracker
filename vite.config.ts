@@ -4,6 +4,12 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+  server: {
+    proxy: {
+      '/api': { target: 'http://localhost:3001', changeOrigin: true },
+      '/uploads': { target: 'http://localhost:3001', changeOrigin: true },
+    },
+  },
   build: {
     rollupOptions: {
       output: {
@@ -19,6 +25,8 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      // Avoid SW intercepting proxied /api in dev (avatars & fetches).
+      devOptions: { enabled: false },
       includeAssets: ['landsharks-logo.png', 'vite.svg'],
       manifest: {
         name: 'Shark Tracker',

@@ -10,7 +10,8 @@ import {
   CircularProgress,
 } from '@mui/material'
 import { Send } from '@mui/icons-material'
-import { API_URL, API_BASE } from '../config'
+import { API_URL } from '../config'
+import { resolveAvatarSrc } from '../utils/avatarUrl'
 
 type Message = {
   id: string
@@ -106,12 +107,8 @@ export function EventChat({ eventId, token, currentUserId }: Props) {
     return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
   }
 
-  const avatarSrc = (m: Message) => {
-    if (!m.avatar_url) return undefined
-    return m.avatar_url.startsWith('http')
-      ? m.avatar_url
-      : `${API_BASE}${m.avatar_url}${m.avatar_updated_at ? `?v=${m.avatar_updated_at}` : ''}`
-  }
+  const avatarSrc = (m: Message) =>
+    resolveAvatarSrc(m.avatar_url, m.avatar_updated_at, { userId: m.user_id })
 
   if (loading) {
     return (
